@@ -14,7 +14,13 @@ def setup_database():
         fecha_suscripcion TEXT,
         plan TEXT, -- 'gratis', 'mensual', 'anual'
         api_key TEXT UNIQUE,
-        activo INTEGER DEFAULT 1
+        activo INTEGER DEFAULT 1,
+        -- New location columns
+        direccion TEXT,
+        municipio TEXT,
+        pais TEXT,
+        latitud REAL,
+        longitud REAL
     );
     """)
 

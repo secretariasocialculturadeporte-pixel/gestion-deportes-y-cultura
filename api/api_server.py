@@ -145,6 +145,58 @@ def register_tenant():
     finally:
         conn.close()
 
+def haversine(lat1, lon1, lat2, lon2):
+    """
+    Calculate the great-circle distance between two points
+    on the earth (specified in decimal degrees).
+    """
+    from math import radians, cos, sin, asin, sqrt
+    # convert decimal degrees to radians
+    lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])
+
+    # haversine formula
+    dlon = lon2 - lon1
+    dlat = lat2 - lat1
+    a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
+    c = 2 * asin(sqrt(a))
+    r = 6371 # Radius of earth in kilometers.
+    return c * r
+
+@app.route('/api/empresas_cercanas', methods=['GET'])
+def get_nearby_tenants():
+    """
+    Finds tenants near the user's provided location.
+    Expects 'lat' and 'lon' as query parameters.
+    """
+    user_lat = request.args.get('lat', type=float)
+    user_lon = request.args.get('lon', type=float)
+
+    if user_lat is None or user_lon is None:
+        return jsonify({"error": "Parámetros 'lat' y 'lon' son requeridos."}), 400
+
+    try:
+        conn = get_db_connection()
+        # Get all tenants that have latitude and longitude set
+        tenants_with_location = conn.execute(
+            'SELECT id, nombre_empresa, direccion, municipio, latitud, longitud FROM inquilinos WHERE latitud IS NOT NULL AND longitud IS NOT NULL AND activo = 1'
+        ).fetchall()
+        conn.close()
+
+        nearby_tenants = []
+        for tenant in tenants_with_location:
+            tenant_dict = dict(tenant)
+            distance = haversine(user_lat, user_lon, tenant_dict['latitud'], tenant_dict['longitud'])
+            tenant_dict['distancia_km'] = round(distance, 2)
+            nearby_tenants.append(tenant_dict)
+
+        # Sort tenants by distance, closest first, and return top 10
+        sorted_tenants = sorted(nearby_tenants, key=lambda x: x['distancia_km'])
+
+        return jsonify(sorted_tenants[:10])
+
+    except Exception as e:
+        return jsonify({"error": "Ocurrió un error en el servidor.", "details": str(e)}), 500
+
 
 if __name__ == '__main__':
     app.run(debug=True, port=5001)

@@ -288,10 +288,17 @@ if __name__ == "__main__":
             if not tenant:
                 # In a real app, the API key should be securely generated (e.g., using secrets module)
                 dummy_api_key = "inquilino_demo_key"
-                cursor.execute("INSERT INTO inquilinos (nombre_empresa, fecha_suscripcion, plan, api_key) VALUES (?, ?, ?, ?)",
-                               ('Empresa Demo', datetime.now().isoformat(), 'anual', dummy_api_key))
+                cursor.execute("""
+                    INSERT INTO inquilinos (nombre_empresa, fecha_suscripcion, plan, api_key, direccion, municipio, pais, latitud, longitud)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        'Empresa Demo', datetime.now().isoformat(), 'anual', dummy_api_key,
+                        'Calle Falsa 123', 'Springfield', 'EEUU', 40.7128, -74.0060
+                    )
+                )
                 tenant_id = cursor.lastrowid
-                print(f"Inquilino de prueba 'Empresa Demo' (ID: {tenant_id}) creado con API Key.")
+                print(f"Inquilino de prueba 'Empresa Demo' (ID: {tenant_id}) creado con ubicación y API Key.")
             else:
                 tenant_id = tenant[0]
                 print(f"Inquilino de prueba 'Empresa Demo' (ID: {tenant_id}) ya existe.")

@@ -1,7 +1,55 @@
 document.addEventListener('DOMContentLoaded', () => {
     const registrationForm = document.getElementById('form-registro');
     const messageDiv = document.getElementById('form-mensaje');
+    const findNearbyBtn = document.getElementById('find-nearby-btn');
+    const nearbyResultsContainer = document.getElementById('nearby-results');
 
+    // --- Geolocation Logic ---
+    findNearbyBtn.addEventListener('click', () => {
+        if (!navigator.geolocation) {
+            nearbyResultsContainer.innerHTML = '<p>La geolocalización no es soportada por tu navegador.</p>';
+            return;
+        }
+
+        nearbyResultsContainer.innerHTML = '<p>Obteniendo tu ubicación...</p>';
+
+        navigator.geolocation.getCurrentPosition(async (position) => {
+            const { latitude, longitude } = position.coords;
+
+            try {
+                const response = await fetch(`/api/empresas_cercanas?lat=${latitude}&lon=${longitude}`);
+                const tenants = await response.json();
+
+                if (response.ok) {
+                    renderNearbyTenants(tenants);
+                } else {
+                    nearbyResultsContainer.innerHTML = `<p>Error: ${tenants.error}</p>`;
+                }
+            } catch (error) {
+                nearbyResultsContainer.innerHTML = '<p>Error al contactar el servidor.</p>';
+            }
+
+        }, () => {
+            nearbyResultsContainer.innerHTML = '<p>No se pudo obtener tu ubicación. Por favor, asegúrate de haber dado permiso.</p>';
+        });
+    });
+
+    function renderNearbyTenants(tenants) {
+        if (tenants.length === 0) {
+            nearbyResultsContainer.innerHTML = '<p>No se encontraron organizaciones cercanas. ¡Puedes ser la primera en tu área!</p>';
+            return;
+        }
+
+        let html = '<h3>Organizaciones Cercanas:</h3><ul>';
+        tenants.forEach(tenant => {
+            html += `<li>${tenant.nombre_empresa} (${tenant.distancia_km} km) - ${tenant.municipio}</li>`;
+        });
+        html += '</ul>';
+        nearbyResultsContainer.innerHTML = html;
+    }
+
+
+    // --- Registration Form Logic ---
     registrationForm.addEventListener('submit', async (e) => {
         e.preventDefault(); // Prevent default form submission
 
