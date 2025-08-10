@@ -28,9 +28,11 @@ def setup_database():
         rol TEXT NOT NULL CHECK(rol IN ('admin_empresa', 'admin_general', 'jefe_area', 'coordinador', 'profesor', 'alumno', 'almacenista', 'jefe_almacen', 'jefe_escenarios')),
         nombre_completo TEXT,
         correo TEXT,
+        reporta_a_usuario_id INTEGER, -- For hierarchy
         activo INTEGER DEFAULT 1,
         UNIQUE(inquilino_id, nombre_usuario),
-        FOREIGN KEY (inquilino_id) REFERENCES inquilinos(id)
+        FOREIGN KEY (inquilino_id) REFERENCES inquilinos(id),
+        FOREIGN KEY (reporta_a_usuario_id) REFERENCES usuarios(id)
     );
     """)
 
@@ -44,6 +46,41 @@ def setup_database():
         inquilino_id INTEGER NOT NULL,
         area TEXT,
         telefono TEXT,
+        FOREIGN KEY (usuario_id) REFERENCES usuarios(id),
+        FOREIGN KEY (inquilino_id) REFERENCES inquilinos(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS jefes_area (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        usuario_id INTEGER UNIQUE NOT NULL,
+        inquilino_id INTEGER NOT NULL,
+        area_responsabilidad TEXT, -- 'Cultura' o 'Deporte'
+        FOREIGN KEY (usuario_id) REFERENCES usuarios(id),
+        FOREIGN KEY (inquilino_id) REFERENCES inquilinos(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS coordinadores (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        usuario_id INTEGER UNIQUE NOT NULL,
+        inquilino_id INTEGER NOT NULL,
+        jefe_area_id INTEGER,
+        FOREIGN KEY (usuario_id) REFERENCES usuarios(id),
+        FOREIGN KEY (inquilino_id) REFERENCES inquilinos(id),
+        FOREIGN KEY (jefe_area_id) REFERENCES jefes_area(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS jefes_almacen (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        usuario_id INTEGER UNIQUE NOT NULL,
+        inquilino_id INTEGER NOT NULL,
+        FOREIGN KEY (usuario_id) REFERENCES usuarios(id),
+        FOREIGN KEY (inquilino_id) REFERENCES inquilinos(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS jefes_escenarios (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        usuario_id INTEGER UNIQUE NOT NULL,
+        inquilino_id INTEGER NOT NULL,
         FOREIGN KEY (usuario_id) REFERENCES usuarios(id),
         FOREIGN KEY (inquilino_id) REFERENCES inquilinos(id)
     );

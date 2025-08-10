@@ -40,9 +40,11 @@ def login_view(page: ft.Page):
             if user_role == 'profesor':
                 page.go("/profesor_home")
             elif user_role == 'alumno':
-                page.go("/alumno_clases") # Example route for student dashboard
-            elif user_role == 'admin':
+                page.go("/alumno_clases")
+            elif user_role == 'admin_empresa':
                 page.go("/admin_home")
+            elif user_role == 'jefe_area':
+                page.go("/jefe_area/home")
             elif user_role == 'almacenista':
                 page.go("/almacenista/elementos")
             else:

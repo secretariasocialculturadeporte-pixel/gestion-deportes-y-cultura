@@ -21,6 +21,9 @@ from views.admin_reporte_asistencia import admin_reporte_asistencia
 from views.admin_reporte_demografico import admin_reporte_demografico
 from views.admin_gestion_listas import admin_gestion_listas
 from views.admin_principal import admin_principal
+from views.admin_empresa.gestion_personal import gestion_personal_view
+from views.jefe_area.jefe_area_principal import jefe_area_principal_view
+from views.jefe_area.gestion_equipo import gestion_equipo_view
 
 def main(page: ft.Page):
     page.title = "Sistema de Gestión de Formación"
@@ -129,6 +132,24 @@ def main(page: ft.Page):
                 else:
                     page.go('/')
 
+            elif page.route == '/admin/personal':
+                if user_role == 'admin_empresa':
+                    page.views.append(gestion_personal_view(page, tenant_id))
+                else:
+                    page.go('/')
+
+            elif page.route == '/jefe_area/home':
+                if user_role == 'jefe_area':
+                    page.views.append(jefe_area_principal_view(page))
+                else:
+                    page.go('/')
+
+            elif page.route == '/jefe_area/equipo':
+                if user_role == 'jefe_area':
+                    page.views.append(gestion_equipo_view(page, tenant_id, user_id))
+                else:
+                    page.go('/')
+
             else:
                 # If route doesn't exist, go to a default page based on role
                 if user_role == 'profesor':
@@ -201,10 +222,41 @@ if __name__ == "__main__":
 
                 print(f"Usuario de prueba '{username}' (ID: {user_id}) creado para el inquilino {tenant_id}.")
 
-            # 3. Add users for the test tenant
-            # Note: The old 'admin' role is now 'admin_empresa' for a tenant
-            add_dummy_user("admin_empresa", "123", "admin_empresa", "Admin Empresa Demo")
-            add_dummy_user("profe", "123", "profesor", "Profesor Demo")
+            # 3. Add users for the test tenant in a hierarchy
+            # Note: The 'add_dummy_user' function needs to be updated to handle the hierarchy
+            def add_dummy_user(username, password, role, name, reports_to_id=None):
+                # Check if user already exists for this tenant
+                cursor.execute("SELECT id FROM usuarios WHERE nombre_usuario = ? AND inquilino_id = ?", (username, tenant_id))
+                if cursor.fetchone():
+                    print(f"Usuario '{username}' para el inquilino {tenant_id} ya existe.")
+                    # Return existing user's ID for hierarchy
+                    cursor.execute("SELECT id FROM usuarios WHERE nombre_usuario = ? AND inquilino_id = ?", (username, tenant_id))
+                    return cursor.fetchone()[0]
+
+                # Create user associated with the tenant
+                cursor.execute("""
+                    INSERT INTO usuarios (inquilino_id, nombre_usuario, password_hash, rol, nombre_completo, correo, reporta_a_usuario_id)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                    """, (tenant_id, username, hash_password(password), role, name, f"{username}@demo.com", reports_to_id))
+                user_id = cursor.lastrowid
+
+                # Create role-specific record
+                if role == 'jefe_area':
+                     cursor.execute("INSERT INTO jefes_area (usuario_id, inquilino_id) VALUES (?, ?)", (user_id, tenant_id))
+                elif role == 'profesor':
+                    cursor.execute("INSERT INTO profesores (usuario_id, inquilino_id) VALUES (?, ?)", (user_id, tenant_id))
+                elif role == 'alumno':
+                    cursor.execute("INSERT INTO alumnos (usuario_id, inquilino_id, documento) VALUES (?, ?, ?)", (user_id, tenant_id, f"12345{user_id}"))
+                elif role == 'almacenista':
+                    cursor.execute("INSERT INTO almacenistas (usuario_id, inquilino_id, area_almacen) VALUES (?, ?, ?)", (user_id, tenant_id, 'General'))
+
+                print(f"Usuario de prueba '{username}' (ID: {user_id}) creado para el inquilino {tenant_id}.")
+                return user_id
+
+            # Create the hierarchy
+            admin_id = add_dummy_user("admin_empresa", "123", "admin_empresa", "Admin Empresa Demo")
+            jefe_deportes_id = add_dummy_user("jefe_deportes", "123", "jefe_area", "Jefe de Deportes", reports_to_id=admin_id)
+            add_dummy_user("profe_futbol", "123", "profesor", "Profesor de Fútbol", reports_to_id=jefe_deportes_id)
             add_dummy_user("alumno", "123", "alumno", "Alumno Demo")
             add_dummy_user("almacen", "123", "almacenista", "Almacenista Demo")
 
