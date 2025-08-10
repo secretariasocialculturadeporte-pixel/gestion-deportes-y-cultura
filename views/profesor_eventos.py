@@ -6,7 +6,7 @@ LOGO_PATH = "assets/logo.png"
 COLOR1_HEX = "#FFD700"
 COLOR2_HEX = "#00A651"
 
-def profesor_eventos(page: ft.Page, profesor_id: int): # Added profesor_id for later use
+def profesor_eventos(page: ft.Page, tenant_id: int, profesor_id: int):
     nombre_evento = ft.TextField(label="Nombre del Evento")
     tipo_evento = ft.Dropdown(
         label="Tipo de Evento",
@@ -40,9 +40,9 @@ def profesor_eventos(page: ft.Page, profesor_id: int): # Added profesor_id for l
         cursor = conn.cursor()
         # Table 'eventos' will be created by the setup script
         cursor.execute("""
-            INSERT INTO eventos (nombre, tipo, fecha, descripcion, creado_por_id)
-            VALUES (?, ?, ?, ?, ?)
-        """, (nombre_evento.value, tipo_evento.value, fecha_evento.value, descripcion_evento.value, profesor_id))
+            INSERT INTO eventos (inquilino_id, nombre, tipo, fecha, descripcion, creado_por_id)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, (tenant_id, nombre_evento.value, tipo_evento.value, fecha_evento.value, descripcion_evento.value, profesor_id))
         conn.commit()
         conn.close()
 

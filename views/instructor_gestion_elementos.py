@@ -7,7 +7,7 @@ LOGO_PATH = "assets/logo.png"
 COLOR1_HEX = "#FFD700"
 COLOR2_HEX = "#00A651"
 
-def instructor_gestion_elementos(page: ft.Page, instructor_id: int):
+def instructor_gestion_elementos(page: ft.Page, tenant_id: int, instructor_id: int):
     # --- WIDGETS ---
     prestamos_activos_column = ft.Column(scroll=ft.ScrollMode.AUTO)
     mensaje_general = ft.Text()
@@ -32,13 +32,14 @@ def instructor_gestion_elementos(page: ft.Page, instructor_id: int):
                     observaciones_entrega = ?,
                     fecha_entrega = ?,
                     estado_entrega = ?
-                WHERE id = ?
+                WHERE id = ? AND inquilino_id = ?
             """, (
                 foto_path,
                 observaciones.value,
                 datetime.date.today().isoformat(),
                 estado_entrega.value,
-                prestamo_id
+                prestamo_id,
+                tenant_id
             ))
             conn.commit()
             conn.close()
@@ -106,8 +107,8 @@ def instructor_gestion_elementos(page: ft.Page, instructor_id: int):
                 SELECT pr.id, e.codigo, e.descripcion, pr.fecha_prestamo
                 FROM prestamos pr
                 JOIN elementos e ON pr.elemento_id = e.id
-                WHERE pr.instructor_id = ? AND pr.estado = 'En uso'
-            """, (instructor_id,))
+                WHERE pr.instructor_id = ? AND pr.estado = 'En uso' AND pr.inquilino_id = ?
+            """, (instructor_id, tenant_id))
 
             prestamos = cursor.fetchall()
             if not prestamos:

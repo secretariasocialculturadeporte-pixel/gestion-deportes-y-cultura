@@ -30,17 +30,19 @@ def main(page: ft.Page):
 
         user_id = page.session.get("user_id")
         user_role = page.session.get("user_role")
+        tenant_id = page.session.get("tenant_id")
 
         # --- unprotected routes ---
         if page.route == '/':
             page.views.append(login_view(page))
         # --- protected routes ---
-        elif user_id is None:
-            # If user is not logged in, redirect to login
+        elif user_id is None or tenant_id is None:
+            # If user is not logged in or has no tenant, redirect to login
             page.views.append(login_view(page))
             page.go('/')
         else:
             # --- Role-based routing ---
+            # Every authenticated view now receives tenant_id
             if page.route == '/profesor_home':
                 if user_role == 'profesor':
                     page.views.append(profesor_principal(page))
@@ -49,79 +51,81 @@ def main(page: ft.Page):
 
             elif page.route == '/profesor_perfil':
                 if user_role == 'profesor':
-                    page.views.append(profesor_perfil(page, user_id))
+                    page.views.append(profesor_perfil(page, user_id, tenant_id))
                 else:
                     page.go('/')
 
             elif page.route == '/profesor_clases':
                  if user_role == 'profesor':
-                    page.views.append(profesor_clases(page, user_id))
+                    # This view needs the professor's own ID from the 'profesores' table
+                    # This logic should be improved later, but for now we pass the user_id
+                    page.views.append(profesor_clases(page, tenant_id, user_id))
                  else:
                     page.go('/')
 
             elif page.route == '/profesor_escenarios':
                  if user_role == 'profesor':
-                    page.views.append(profesor_escenarios(page))
+                    page.views.append(profesor_escenarios(page, tenant_id))
                  else:
                     page.go('/')
 
             elif page.route == '/profesor_eventos':
                  if user_role == 'profesor':
-                    page.views.append(profesor_eventos(page, user_id))
+                    page.views.append(profesor_eventos(page, tenant_id, user_id))
                  else:
                     page.go('/')
 
             elif page.route == '/profesor_horarios':
                  if user_role == 'profesor':
-                    page.views.append(profesor_horarios(page))
+                    page.views.append(profesor_horarios(page, tenant_id))
                  else:
                     page.go('/')
 
             elif page.route == '/profesor_procesos_formacion':
                  if user_role == 'profesor':
-                    page.views.append(profesor_procesos_formacion(page))
+                    page.views.append(profesor_procesos_formacion(page, tenant_id))
                  else:
                     page.go('/')
 
             elif page.route == '/instructor/elementos':
                  if user_role == 'profesor':
-                    page.views.append(instructor_gestion_elementos(page, user_id))
+                    page.views.append(instructor_gestion_elementos(page, tenant_id, user_id))
                  else:
                     page.go('/')
 
             elif page.route == '/alumno_clases':
                 if user_role == 'alumno':
-                    page.views.append(alumno_clases(page, user_id))
+                    page.views.append(alumno_clases(page, tenant_id, user_id))
                 else:
                     page.go('/')
 
             elif page.route == '/almacenista/elementos':
                 if user_role == 'almacenista':
-                    page.views.append(almacenista_gestion_elementos(page, user_id))
-                else:
-                    page.go('/')
-
-            elif page.route == '/admin/reporte_demografico':
-                if user_role == 'admin':
-                    page.views.append(admin_reporte_demografico(page))
-                else:
-                    page.go('/')
-
-            elif page.route == '/admin/reporte_asistencia':
-                if user_role == 'admin':
-                    page.views.append(admin_reporte_asistencia(page))
+                    page.views.append(almacenista_gestion_elementos(page, tenant_id, user_id))
                 else:
                     page.go('/')
 
             elif page.route == '/admin_home':
-                if user_role == 'admin':
+                if user_role == 'admin_empresa':
                     page.views.append(admin_principal(page))
                 else:
                     page.go('/')
 
+            elif page.route == '/admin/reporte_demografico':
+                if user_role == 'admin_empresa':
+                    page.views.append(admin_reporte_demografico(page, tenant_id))
+                else:
+                    page.go('/')
+
+            elif page.route == '/admin/reporte_asistencia':
+                if user_role == 'admin_empresa':
+                    page.views.append(admin_reporte_asistencia(page, tenant_id))
+                else:
+                    page.go('/')
+
             elif page.route == '/admin/gestion_listas':
-                if user_role == 'admin':
-                    page.views.append(admin_gestion_listas(page))
+                if user_role == 'admin_empresa':
+                    page.views.append(admin_gestion_listas(page, tenant_id))
                 else:
                     page.go('/')
 
@@ -149,49 +153,69 @@ def main(page: ft.Page):
 if __name__ == "__main__":
     # Ensure the database and its tables are created before the app runs
     setup_database()
-    # To test, we can add a dummy user
+
+    # --- Multi-Tenant Dummy Data Setup ---
     import sqlite3
-    def add_dummy_user(username, password, role, name):
+    from datetime import datetime
+    from views.login import hash_password
+
+    def setup_dummy_data():
         conn = sqlite3.connect("formacion.db")
         cursor = conn.cursor()
+
         try:
-            from views.login import hash_password
-            # Check if user already exists
-            cursor.execute("SELECT id FROM usuarios WHERE nombre_usuario = ?", (username,))
-            if cursor.fetchone():
-                print(f"Usuario de prueba '{username}' ya existe.")
-                return
+            # 1. Create a Test Tenant if it doesn't exist
+            cursor.execute("SELECT id FROM inquilinos WHERE nombre_empresa = 'Empresa Demo'")
+            tenant = cursor.fetchone()
+            if not tenant:
+                # In a real app, the API key should be securely generated (e.g., using secrets module)
+                dummy_api_key = "inquilino_demo_key"
+                cursor.execute("INSERT INTO inquilinos (nombre_empresa, fecha_suscripcion, plan, api_key) VALUES (?, ?, ?, ?)",
+                               ('Empresa Demo', datetime.now().isoformat(), 'anual', dummy_api_key))
+                tenant_id = cursor.lastrowid
+                print(f"Inquilino de prueba 'Empresa Demo' (ID: {tenant_id}) creado con API Key.")
+            else:
+                tenant_id = tenant[0]
+                print(f"Inquilino de prueba 'Empresa Demo' (ID: {tenant_id}) ya existe.")
 
-            # Create user
-            cursor.execute("INSERT INTO usuarios (nombre_usuario, password_hash, rol, nombre_completo, correo) VALUES (?, ?, ?, ?, ?)",
-                           (username, hash_password(password), role, name, f"{username}@test.com"))
-            user_id = cursor.lastrowid
+            # 2. Function to add users for this tenant
+            def add_dummy_user(username, password, role, name):
+                # Check if user already exists for this tenant
+                cursor.execute("SELECT id FROM usuarios WHERE nombre_usuario = ? AND inquilino_id = ?", (username, tenant_id))
+                if cursor.fetchone():
+                    print(f"Usuario '{username}' para el inquilino {tenant_id} ya existe.")
+                    return
 
-            # Create role-specific record
-            if role == 'profesor':
-                cursor.execute("INSERT INTO profesores (usuario_id, area) VALUES (?, ?)", (user_id, 'Deportes'))
-            elif role == 'alumno':
-                # Add some dummy demographic data
-                cursor.execute("""
-                    INSERT INTO alumnos (usuario_id, tipo_documento, documento, genero, escolaridad)
-                    VALUES (?, 'C.C.', ?, 'Masculino', 'Universitario')
-                    """, (user_id, f"12345{user_id}"))
-            elif role == 'almacenista':
-                cursor.execute("INSERT INTO almacenistas (usuario_id, area_almacen) VALUES (?, ?)", (user_id, 'General'))
+                # Create user associated with the tenant
+                cursor.execute("INSERT INTO usuarios (inquilino_id, nombre_usuario, password_hash, rol, nombre_completo, correo) VALUES (?, ?, ?, ?, ?, ?)",
+                               (tenant_id, username, hash_password(password), role, name, f"{username}@demo.com"))
+                user_id = cursor.lastrowid
+
+                # Create role-specific record
+                if role == 'profesor':
+                    cursor.execute("INSERT INTO profesores (usuario_id, inquilino_id, area) VALUES (?, ?, ?)", (user_id, tenant_id, 'Deportes'))
+                elif role == 'alumno':
+                    cursor.execute("INSERT INTO alumnos (usuario_id, inquilino_id, documento) VALUES (?, ?, ?)", (user_id, tenant_id, f"12345{user_id}"))
+                elif role == 'almacenista':
+                    cursor.execute("INSERT INTO almacenistas (usuario_id, inquilino_id, area_almacen) VALUES (?, ?, ?)", (user_id, tenant_id, 'General'))
+
+                print(f"Usuario de prueba '{username}' (ID: {user_id}) creado para el inquilino {tenant_id}.")
+
+            # 3. Add users for the test tenant
+            # Note: The old 'admin' role is now 'admin_empresa' for a tenant
+            add_dummy_user("admin_empresa", "123", "admin_empresa", "Admin Empresa Demo")
+            add_dummy_user("profe", "123", "profesor", "Profesor Demo")
+            add_dummy_user("alumno", "123", "alumno", "Alumno Demo")
+            add_dummy_user("almacen", "123", "almacenista", "Almacenista Demo")
 
             conn.commit()
-            print(f"Usuario de prueba '{username}' (ID: {user_id}) creado con su rol específico.")
 
         except Exception as e:
-            print(f"Error creando usuario de prueba '{username}': {e}")
+            print(f"Error creando datos de prueba: {e}")
             conn.rollback()
         finally:
             conn.close()
 
-    # Add users for testing each role
-    add_dummy_user("profe", "123", "profesor", "Profesor Demo")
-    add_dummy_user("alumno", "123", "alumno", "Alumno Demo")
-    add_dummy_user("admin", "123", "admin", "Admin Demo")
-    add_dummy_user("almacen", "123", "almacenista", "Almacenista Demo")
+    setup_dummy_data()
 
     ft.app(target=main, assets_dir="assets")

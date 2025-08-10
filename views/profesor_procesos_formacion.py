@@ -6,7 +6,7 @@ COLOR1_HEX = "#FFD700"
 COLOR2_HEX = "#00A651"
 
 
-def profesor_procesos_formacion(page: ft.Page):
+def profesor_procesos_formacion(page: ft.Page, tenant_id: int):
     nombre_input = ft.TextField(label="Nombre del Proceso", expand=True)
     tipo_dropdown = ft.Dropdown(
         label="Tipo",
@@ -36,9 +36,9 @@ def profesor_procesos_formacion(page: ft.Page):
         cursor = conn.cursor()
         # Table will be created by the setup script
         cursor.execute("""
-            INSERT INTO procesos_formacion (nombre_proceso, tipo_proceso, descripcion)
-            VALUES (?, ?, ?)
-        """, (nombre, tipo, descripcion))
+            INSERT INTO procesos_formacion (inquilino_id, nombre_proceso, tipo_proceso, descripcion)
+            VALUES (?, ?, ?, ?)
+        """, (tenant_id, nombre, tipo, descripcion))
         conn.commit()
         conn.close()
 
@@ -52,7 +52,7 @@ def profesor_procesos_formacion(page: ft.Page):
         conn = sqlite3.connect("formacion.db")
         cursor = conn.cursor()
         # Table will be created by the setup script
-        cursor.execute("SELECT nombre_proceso, tipo_proceso, descripcion FROM procesos_formacion")
+        cursor.execute("SELECT nombre_proceso, tipo_proceso, descripcion FROM procesos_formacion WHERE inquilino_id = ?", (tenant_id,))
         datos = cursor.fetchall()
         conn.close()
 

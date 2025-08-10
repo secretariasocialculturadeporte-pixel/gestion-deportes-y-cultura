@@ -6,7 +6,7 @@ LOGO_PATH = "assets/logo.png"
 COLOR1_HEX = "#FFD700"
 COLOR2_HEX = "#00A651"
 
-def alumno_inscripcion(page: ft.Page, alumno_id: int):
+def alumno_inscripcion(page: ft.Page, tenant_id: int, alumno_id: int):
     clases_disponibles = ft.Dropdown(label="Selecciona una clase para inscribirte", value=None)
     mensaje = ft.Text(value="")
 
@@ -15,13 +15,11 @@ def alumno_inscripcion(page: ft.Page, alumno_id: int):
         try:
             conn = sqlite3.connect("formacion.db")
             cursor = conn.cursor()
-            # Cargar clases en las que el alumno NO está inscrito
-            # Esta consulta asume que las inscripciones son por clase.
-            # El modelo de datos puede ser más complejo (inscripción a proceso).
+            # Cargar clases del tenant en las que el alumno NO está inscrito
             cursor.execute("""
                 SELECT id, nombre_clase FROM clases
-                WHERE id NOT IN (SELECT clase_id FROM inscripciones WHERE alumno_id = ?)
-            """, (alumno_id,))
+                WHERE inquilino_id = ? AND id NOT IN (SELECT clase_id FROM inscripciones WHERE alumno_id = ? AND inquilino_id = ?)
+            """, (tenant_id, alumno_id, tenant_id))
             clases = cursor.fetchall()
 
             if not clases:
@@ -47,9 +45,9 @@ def alumno_inscripcion(page: ft.Page, alumno_id: int):
                 conn = sqlite3.connect("formacion.db")
                 cursor = conn.cursor()
                 cursor.execute("""
-                    INSERT INTO inscripciones (alumno_id, clase_id, fecha_inscripcion)
-                    VALUES (?, ?, ?)
-                """, (alumno_id, int(clase_id), datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+                    INSERT INTO inscripciones (inquilino_id, alumno_id, clase_id, fecha_inscripcion)
+                    VALUES (?, ?, ?, ?)
+                """, (tenant_id, alumno_id, int(clase_id), datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
                 conn.commit()
                 mensaje.value = "¡Inscripción exitosa!"
                 mensaje.color = "green"

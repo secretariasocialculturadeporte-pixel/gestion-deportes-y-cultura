@@ -7,7 +7,7 @@ LOGO_PATH = "assets/logo.png"
 COLOR1_HEX = "#FFD700"
 COLOR2_HEX = "#00A651"
 
-def almacenista_gestion_elementos(page: ft.Page, almacenista_id: int):
+def almacenista_gestion_elementos(page: ft.Page, tenant_id: int, almacenista_id: int):
     # --- WIDGETS ---
     # Form for adding a new loan/prestamo
     codigo_input = ft.TextField(label="Código del Elemento")
@@ -27,14 +27,14 @@ def almacenista_gestion_elementos(page: ft.Page, almacenista_id: int):
         conn = sqlite3.connect("formacion.db")
         cursor = conn.cursor()
 
-        # Cargar instructores
+        # Cargar instructores del tenant
         try:
-            cursor.execute("SELECT id, nombre || ' ' || apellido FROM profesores")
+            cursor.execute("SELECT id, nombre_completo FROM usuarios WHERE inquilino_id = ? AND rol = 'profesor'", (tenant_id,))
             instructores_dropdown.options = [ft.dropdown.Option(str(row[0]), row[1]) for row in cursor.fetchall()]
         except Exception as e:
             print(f"Error loading instructors: {e}")
 
-        # Cargar prestamos activos
+        # Cargar prestamos activos del tenant
         try:
             tabla_prestamos.columns = [
                 ft.DataColumn(ft.Text("Código")),
@@ -44,12 +44,12 @@ def almacenista_gestion_elementos(page: ft.Page, almacenista_id: int):
                 ft.DataColumn(ft.Text("Estado")),
             ]
             cursor.execute("""
-                SELECT e.codigo, e.descripcion, p.nombre, pr.fecha_prestamo, pr.estado
+                SELECT e.codigo, e.descripcion, u.nombre_completo, pr.fecha_prestamo, pr.estado
                 FROM prestamos pr
                 JOIN elementos e ON pr.elemento_id = e.id
-                JOIN profesores p ON pr.instructor_id = p.id
-                WHERE pr.estado = 'En uso'
-            """)
+                JOIN usuarios u ON pr.instructor_id = u.id
+                WHERE pr.estado = 'En uso' AND pr.inquilino_id = ?
+            """, (tenant_id,))
             tabla_prestamos.rows = [
                 ft.DataRow(cells=[ft.DataCell(ft.Text(str(cell))) for cell in row])
                 for row in cursor.fetchall()
@@ -70,23 +70,23 @@ def almacenista_gestion_elementos(page: ft.Page, almacenista_id: int):
         conn = sqlite3.connect("formacion.db")
         cursor = conn.cursor()
         try:
-            # Step 1: Create the element if it doesn't exist, or find it.
-            cursor.execute("SELECT id FROM elementos WHERE codigo = ?", (codigo_input.value,))
+            # Step 1: Create the element if it doesn't exist for this tenant, or find it.
+            cursor.execute("SELECT id FROM elementos WHERE codigo = ? AND inquilino_id = ?", (codigo_input.value, tenant_id))
             elemento = cursor.fetchone()
             if elemento:
                 elemento_id = elemento[0]
             else:
-                cursor.execute("INSERT INTO elementos (codigo, descripcion) VALUES (?, ?)",
-                               (codigo_input.value, descripcion_input.value))
+                cursor.execute("INSERT INTO elementos (inquilino_id, codigo, descripcion) VALUES (?, ?, ?)",
+                               (tenant_id, codigo_input.value, descripcion_input.value))
                 elemento_id = cursor.lastrowid
 
-            # Step 2: Create the loan record (prestamo)
+            # Step 2: Create the loan record (prestamo) for this tenant
             foto_path = foto_picker.result.files[0].path # Simplified path
             cursor.execute("""
-                INSERT INTO prestamos (elemento_id, instructor_id, almacenista_id, fecha_prestamo, observaciones_prestamo, foto_prestamo, estado)
-                VALUES (?, ?, ?, ?, ?, ?, 'En uso')
+                INSERT INTO prestamos (inquilino_id, elemento_id, instructor_id, almacenista_id, fecha_prestamo, observaciones_prestamo, foto_prestamo, estado)
+                VALUES (?, ?, ?, ?, ?, ?, ?, 'En uso')
             """, (
-                elemento_id, int(instructores_dropdown.value), almacenista_id,
+                tenant_id, elemento_id, int(instructores_dropdown.value), almacenista_id,
                 datetime.now().strftime('%Y-%m-%d'), observaciones_input.value, foto_path
             ))
             conn.commit()

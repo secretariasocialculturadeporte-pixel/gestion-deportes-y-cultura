@@ -22,17 +22,19 @@ def login_view(page: ft.Page):
         conn = sqlite3.connect("formacion.db")
         cursor = conn.cursor()
 
-        # In a real app, you'd compare hashed passwords.
-        # For this example, we assume we might need to create a user if one doesn't exist.
-        cursor.execute("SELECT id, rol, nombre_completo FROM usuarios WHERE nombre_usuario = ? AND password_hash = ?",
+        # In a multi-tenant app, the username might not be unique across all tenants.
+        # A real login would likely involve a tenant identifier.
+        # For now, we assume username is unique for simplicity of login.
+        cursor.execute("SELECT id, rol, nombre_completo, inquilino_id FROM usuarios WHERE nombre_usuario = ? AND password_hash = ?",
                        (usuario, hash_password(password)))
         user_data = cursor.fetchone()
 
         if user_data:
-            user_id, user_role, user_name = user_data
+            user_id, user_role, user_name, tenant_id = user_data
             page.session.set("user_id", user_id)
             page.session.set("user_role", user_role)
             page.session.set("user_name", user_name)
+            page.session.set("tenant_id", tenant_id)
 
             # Redirect based on role
             if user_role == 'profesor':

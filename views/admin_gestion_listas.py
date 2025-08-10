@@ -19,7 +19,7 @@ LISTA_TABLES = {
     "Tipos de Escenario": "tipos_escenario",
 }
 
-def admin_gestion_listas(page: ft.Page):
+def admin_gestion_listas(page: ft.Page, tenant_id: int):
 
     def get_current_table():
         return LISTA_TABLES.get(lista_selector.value)
@@ -34,7 +34,7 @@ def admin_gestion_listas(page: ft.Page):
         try:
             conn = sqlite3.connect("formacion.db")
             cursor = conn.cursor()
-            cursor.execute(f"SELECT id, nombre FROM {table_name} ORDER BY nombre")
+            cursor.execute(f"SELECT id, nombre FROM {table_name} WHERE inquilino_id = ? ORDER BY nombre", (tenant_id,))
             opciones = cursor.fetchall()
             conn.close()
 
@@ -68,7 +68,7 @@ def admin_gestion_listas(page: ft.Page):
         try:
             conn = sqlite3.connect("formacion.db")
             cursor = conn.cursor()
-            cursor.execute(f"INSERT INTO {table_name} (nombre) VALUES (?)", (new_value,))
+            cursor.execute(f"INSERT INTO {table_name} (inquilino_id, nombre) VALUES (?, ?)", (tenant_id, new_value))
             conn.commit()
             conn.close()
 
@@ -91,7 +91,8 @@ def admin_gestion_listas(page: ft.Page):
         try:
             conn = sqlite3.connect("formacion.db")
             cursor = conn.cursor()
-            cursor.execute(f"DELETE FROM {table_name} WHERE id = ?", (option_id,))
+            # Ensure we only delete from the correct tenant
+            cursor.execute(f"DELETE FROM {table_name} WHERE id = ? AND inquilino_id = ?", (option_id, tenant_id))
             conn.commit()
             conn.close()
             cargar_opciones() # Refresh table

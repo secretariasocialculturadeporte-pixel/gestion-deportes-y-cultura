@@ -5,7 +5,7 @@ LOGO_PATH = "assets/logo.png"
 COLOR1_HEX = "#FFD700"
 COLOR2_HEX = "#00A651"
 
-def profesor_escenarios(page: ft.Page):
+def profesor_escenarios(page: ft.Page, tenant_id: int):
     # --- WIDGETS ---
     nombre_input = ft.TextField(label="Nombre del Escenario", width=400)
     descripcion_input = ft.TextField(label="Descripción", multiline=True, width=400)
@@ -25,17 +25,17 @@ def profesor_escenarios(page: ft.Page):
         conn = sqlite3.connect("formacion.db")
         cursor = conn.cursor()
 
-        # Load scenario types for the dropdown
+        # Load scenario types for the dropdown for the specific tenant
         try:
-            cursor.execute("SELECT nombre FROM tipos_escenario ORDER BY nombre")
+            cursor.execute("SELECT nombre FROM tipos_escenario WHERE inquilino_id = ? ORDER BY nombre", (tenant_id,))
             tipos = cursor.fetchall()
             tipo_input.options = [ft.dropdown.Option(t[0]) for t in tipos]
         except sqlite3.OperationalError:
             # Table might not exist on first run, admin needs to add options
             pass
 
-        # Load existing scenarios into the table
-        cursor.execute("SELECT nombre, descripcion, ubicacion, capacidad, tipo FROM escenarios")
+        # Load existing scenarios into the table for the specific tenant
+        cursor.execute("SELECT nombre, descripcion, ubicacion, capacidad, tipo FROM escenarios WHERE inquilino_id = ?", (tenant_id,))
         datos = cursor.fetchall()
         conn.close()
 
@@ -74,9 +74,9 @@ def profesor_escenarios(page: ft.Page):
             conn = sqlite3.connect("formacion.db")
             cursor = conn.cursor()
             cursor.execute("""
-                INSERT INTO escenarios (nombre, descripcion, ubicacion, capacidad, tipo)
-                VALUES (?, ?, ?, ?, ?)
-            """, (nombre, descripcion, ubicacion, capacidad_int, tipo))
+                INSERT INTO escenarios (inquilino_id, nombre, descripcion, ubicacion, capacidad, tipo)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, (tenant_id, nombre, descripcion, ubicacion, capacidad_int, tipo))
             conn.commit()
             conn.close()
 

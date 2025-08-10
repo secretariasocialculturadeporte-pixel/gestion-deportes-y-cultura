@@ -6,7 +6,7 @@ LOGO_PATH = "assets/logo.png"
 COLOR1_HEX = "#FFD700"
 COLOR2_HEX = "#00A651"
 
-def profesor_clases(page: ft.Page, profesor_id: int):
+def profesor_clases(page: ft.Page, tenant_id: int, profesor_id: int):
     # --- WIDGETS ---
     nombre_clase = ft.TextField(label="Nombre de la Clase/Tema", width=400)
     proceso_dropdown = ft.Dropdown(label="Proceso Formativo", width=400)
@@ -31,13 +31,12 @@ def profesor_clases(page: ft.Page, profesor_id: int):
         conn = sqlite3.connect("formacion.db")
         cursor = conn.cursor()
 
-        # Cargar procesos formativos del profesor
-        # This assumes a link table between profesores and procesos
-        cursor.execute("SELECT id, nombre_proceso FROM procesos_formacion") # Simplified for now
+        # Cargar procesos formativos del tenant
+        cursor.execute("SELECT id, nombre_proceso FROM procesos_formacion WHERE inquilino_id = ?", (tenant_id,))
         proceso_dropdown.options = [ft.dropdown.Option(str(row[0]), row[1]) for row in cursor.fetchall()]
 
-        # Cargar escenarios
-        cursor.execute("SELECT id, nombre FROM escenarios")
+        # Cargar escenarios del tenant
+        cursor.execute("SELECT id, nombre FROM escenarios WHERE inquilino_id = ?", (tenant_id,))
         escenario_dropdown.options = [ft.dropdown.Option(str(row[0]), row[1]) for row in cursor.fetchall()]
 
         conn.close()
@@ -55,10 +54,10 @@ def profesor_clases(page: ft.Page, profesor_id: int):
             conn = sqlite3.connect("formacion.db")
             cursor = conn.cursor()
             cursor.execute("""
-                INSERT INTO clases (nombre_clase, proceso_id, instructor_id, fecha, hora_inicio, hora_fin, escenario_id, espacio, grupo, novedad)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO clases (inquilino_id, nombre_clase, proceso_id, instructor_id, fecha, hora_inicio, hora_fin, escenario_id, espacio, grupo, novedad)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
-                nombre_clase.value, int(proceso_dropdown.value), profesor_id, fecha.value,
+                tenant_id, nombre_clase.value, int(proceso_dropdown.value), profesor_id, fecha.value,
                 hora_inicio.value, hora_fin.value, int(escenario_dropdown.value),
                 espacio_input.value, grupo_dropdown.value, novedad.value
             ))
