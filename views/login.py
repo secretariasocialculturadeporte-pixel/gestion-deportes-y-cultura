@@ -1,5 +1,6 @@
 import flet as ft
 import sqlite3
+from utils.audit_logger import log_action
 
 # Dummy hash function for now. In a real app, use something like bcrypt.
 def hash_password(password):
@@ -29,6 +30,14 @@ def login_view(page: ft.Page, google_provider, microsoft_provider):
             page.session.set("user_role", user_role)
             page.session.set("user_name", user_name)
             page.session.set("tenant_id", tenant_id)
+
+            # Log the successful login action
+            log_action(
+                tenant_id=tenant_id,
+                actor_user_id=user_id,
+                action="INICIO_SESION_EXITOSO",
+                details={"usuario": user_name, "metodo": "password"}
+            )
 
             # Redirect logic (will need to be updated in the main router as well)
             if user_role == 'profesor': page.go("/profesor_home")

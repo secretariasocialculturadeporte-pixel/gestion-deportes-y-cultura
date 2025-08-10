@@ -1,12 +1,13 @@
 import flet as ft
 import sqlite3
 from views.login import hash_password # Re-using the dummy hash function
+from utils.audit_logger import log_action
 
 LOGO_PATH = "../assets/logo.png"
 COLOR1_HEX = "#FFD700"
 COLOR2_HEX = "#00A651"
 
-def gestion_personal_view(page: ft.Page, tenant_id: int):
+def gestion_personal_view(page: ft.Page, tenant_id: int, actor_user_id: int):
 
     # --- DIALOG FOR CREATING USER ---
     def crear_dialogo_usuario(rol_a_crear: str):
@@ -49,6 +50,15 @@ def gestion_personal_view(page: ft.Page, tenant_id: int):
                     cursor.execute("INSERT INTO jefes_escenarios (usuario_id, inquilino_id) VALUES (?, ?)", (new_user_id, tenant_id))
 
                 conn.commit()
+
+                # Log the action
+                log_action(
+                    tenant_id=tenant_id,
+                    actor_user_id=actor_user_id,
+                    action="CREAR_USUARIO",
+                    details={"usuario_creado_id": new_user_id, "rol_asignado": rol_a_crear, "nombre": nombre_completo_input.value}
+                )
+
                 page.snack_bar = ft.SnackBar(ft.Text(f"Usuario '{nombre_completo_input.value}' creado con éxito."), bgcolor="green")
                 page.dialog.open = False
                 cargar_usuarios() # Refresh the user list

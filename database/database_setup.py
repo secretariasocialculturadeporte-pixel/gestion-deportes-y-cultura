@@ -315,6 +315,20 @@ def setup_database():
         FOREIGN KEY (inquilino_id) REFERENCES inquilinos(id),
         FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
     );
+
+    # --- 6. Tabla de Auditoría ---
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS audit_log (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        inquilino_id INTEGER NOT NULL,
+        usuario_id_actor INTEGER, -- Can be NULL if action is by the system
+        accion TEXT NOT NULL, -- e.g., 'CREAR_USUARIO', 'MODIFICAR_RESERVA'
+        detalles TEXT, -- JSON string with relevant data, e.g., {"usuario_creado_id": 5, "rol": "profesor"}
+        timestamp TEXT NOT NULL,
+        FOREIGN KEY (inquilino_id) REFERENCES inquilinos(id),
+        FOREIGN KEY (usuario_id_actor) REFERENCES usuarios(id)
+    );
+    """)
     """)
 
     conn.commit()

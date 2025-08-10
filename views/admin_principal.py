@@ -77,6 +77,11 @@ def admin_principal(page: ft.Page, tenant_id: int): # Now needs tenant_id
                     subtitle=ft.Text("Configura tu API Key de Google AI Studio"),
                     on_click=lambda _: page.go("/admin/configuracion_ia")
                 ),
+                ft.ListTile(
+                    title=ft.Text("🛡️ Registro de Auditoría"),
+                    subtitle=ft.Text("Ver el registro de acciones importantes en el sistema"),
+                    on_click=lambda _: page.go("/admin/audit_log")
+                ),
                 ft.Divider(height=20),
                 ft.Text("Asistente de IA", size=18, weight="bold"),
                 ft.Row([command_input, submit_button]),
