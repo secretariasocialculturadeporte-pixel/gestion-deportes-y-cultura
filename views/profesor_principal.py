@@ -1,10 +1,44 @@
 import flet as ft
+import pandas as pd
+import sqlite3
+from datetime import datetime
 
 LOGO_PATH = "assets/logo.png"
 COLOR1_HEX = "#FFD700"
 COLOR2_HEX = "#00A651"
 
-def profesor_principal(page: ft.Page):
+def profesor_principal(page: ft.Page, tenant_id: int, profesor_id: int):
+
+    def handle_export_asistencia(e):
+        try:
+            conn = sqlite3.connect("formacion.db")
+            query = """
+                SELECT
+                    u.nombre_completo AS Alumno,
+                    c.nombre_clase AS Clase,
+                    a.fecha_hora AS Fecha_Asistencia
+                FROM asistencias a
+                JOIN clases c ON a.clase_id = c.id
+                JOIN usuarios u ON a.alumno_id = u.id
+                WHERE c.instructor_id = ? AND a.inquilino_id = ?
+                ORDER BY a.fecha_hora DESC
+            """
+            df = pd.read_sql_query(query, conn, params=(profesor_id, tenant_id))
+            conn.close()
+
+            if df.empty:
+                page.snack_bar = ft.SnackBar(ft.Text("No tienes datos de asistencia para exportar."), bgcolor="orange")
+            else:
+                filename = f"reporte_asistencia_prof_{profesor_id}_{datetime.now().strftime('%Y%m%d')}.xlsx"
+                df.to_excel(filename, index=False)
+                page.snack_bar = ft.SnackBar(ft.Text(f"Reporte descargado como {filename}"), bgcolor="green")
+
+        except Exception as ex:
+            page.snack_bar = ft.SnackBar(ft.Text(f"Error al exportar: {ex}"), bgcolor="red")
+
+        page.snack_bar.open = True
+        page.update()
+
     return ft.View("/profesor_home", [
         ft.AppBar(title=ft.Text("Panel Principal del Profesor"), bgcolor=COLOR1_HEX),
         ft.Container(
@@ -30,14 +64,15 @@ def profesor_principal(page: ft.Page):
                     on_click=lambda _: page.go("/profesor_eventos")
                 ),
                 ft.ListTile(
-                    title=ft.Text("📚 Procesos de formación"),
-                    subtitle=ft.Text("Crear y gestionar procesos de formación"),
-                    on_click=lambda _: page.go("/profesor_procesos_formacion")
+                    title=ft.Text("📚 Gestión de Clases"),
+                    subtitle=ft.Text("Crear y gestionar tus clases"),
+                    on_click=lambda _: page.go("/profesor_clases")
                 ),
                 ft.ListTile(
-                    title=ft.Text("📊 Reportes"),
-                    subtitle=ft.Text("Ver reportes y descargar listados"),
-                    on_click=lambda _: page.go("/profesor_reportes")
+                    title=ft.Text("📊 Descargar Reporte de Asistencia"),
+                    subtitle=ft.Text("Exportar un listado de todas tus asistencias a Excel"),
+                    leading=ft.Icon(ft.icons.DOWNLOAD),
+                    on_click=handle_export_asistencia
                 ),
             ], scroll=ft.ScrollMode.AUTO)
         )

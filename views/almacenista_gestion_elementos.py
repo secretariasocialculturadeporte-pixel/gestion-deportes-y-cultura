@@ -150,7 +150,48 @@ def almacenista_gestion_elementos(page: ft.Page, tenant_id: int, jefe_almacen_id
                 mensaje_estado,
                 ft.Divider(height=20),
                 ft.Text("Préstamos Activos", size=18, weight="bold"),
-                ft.Container(content=tabla_prestamos, expand=True)
+                ft.Container(content=tabla_prestamos, expand=True),
+                ft.Divider(),
+                ft.ElevatedButton(
+                    "Descargar Historial de Movimientos",
+                    icon=ft.icons.DOWNLOAD,
+                    on_click=lambda e: handle_export_movimientos(e)
+                )
             ], scroll=ft.ScrollMode.AUTO)
         )
     ])
+
+    def handle_export_movimientos(e):
+        try:
+            conn = sqlite3.connect("formacion.db")
+            query = """
+                SELECT
+                    e.codigo AS Codigo_Elemento,
+                    e.descripcion AS Descripcion,
+                    u_prof.nombre_completo AS Asignado_A,
+                    pr.fecha_prestamo,
+                    pr.estado,
+                    pr.fecha_entrega,
+                    pr.observaciones_prestamo,
+                    pr.observaciones_entrega
+                FROM prestamos pr
+                JOIN elementos e ON pr.elemento_id = e.id
+                JOIN usuarios u_prof ON pr.instructor_id = u_prof.id
+                WHERE pr.inquilino_id = ? AND pr.area = ?
+                ORDER BY pr.fecha_prestamo DESC
+            """
+            df = pd.read_sql_query(query, conn, params=(tenant_id, user_area))
+            conn.close()
+
+            if df.empty:
+                page.snack_bar = ft.SnackBar(ft.Text("No hay datos de movimientos para exportar."), bgcolor="orange")
+            else:
+                filename = f"reporte_movimientos_{user_area}_{datetime.now().strftime('%Y%m%d')}.xlsx"
+                df.to_excel(filename, index=False)
+                page.snack_bar = ft.SnackBar(ft.Text(f"Reporte descargado como {filename}"), bgcolor="green")
+
+        except Exception as ex:
+            page.snack_bar = ft.SnackBar(ft.Text(f"Error al exportar: {ex}"), bgcolor="red")
+
+        page.snack_bar.open = True
+        page.update()

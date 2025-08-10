@@ -6,9 +6,10 @@ COLOR1_HEX = "#FFD700"
 COLOR2_HEX = "#00A651"
 
 class GestionEscenariosView:
-    def __init__(self, page: ft.Page, tenant_id: int):
+    def __init__(self, page: ft.Page, tenant_id: int, user_id: int):
         self.page = page
         self.tenant_id = tenant_id
+        self.user_id = user_id
 
         # --- Main UI Controls ---
         self.lista_escenarios = ft.ListView(expand=True, spacing=10)
@@ -131,6 +132,64 @@ class GestionEscenariosView:
         self.cerrar_dialogo(e)
         self.cargar_partes_escenario()
 
+    def handle_export_reservas(self, e):
+        try:
+            conn = sqlite3.connect("formacion.db")
+            # This query needs to get the area of the current user first.
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT ja.area_responsabilidad
+                FROM jefes_escenarios je
+                JOIN usuarios u ON je.usuario_id = u.id
+                JOIN jefes_area ja ON u.reporta_a_usuario_id = ja.usuario_id
+                WHERE je.inquilino_id = ?
+            """, (self.tenant_id,)) # This is not quite right, needs the user id.
+            cursor.execute("""
+                SELECT ja.area_responsabilidad
+                FROM usuarios u
+                JOIN jefes_area ja ON u.reporta_a_usuario_id = ja.usuario_id
+                WHERE u.id = ?
+            """, (self.user_id,))
+            result = cursor.fetchone()
+            if not result or not result[0]:
+                self.page.snack_bar = ft.SnackBar(ft.Text("No se pudo determinar el área para este usuario."), bgcolor="red")
+                self.page.snack_bar.open = True
+                self.page.update()
+                conn.close()
+                return
+            user_area = result[0]
+
+            query = """
+                SELECT
+                    r.id,
+                    ep.nombre_parte,
+                    e.nombre,
+                    u.nombre_completo AS Reservado_Por,
+                    r.proposito,
+                    r.fecha_inicio,
+                    r.fecha_fin,
+                    r.estado
+                FROM reservas r
+                JOIN escenario_partes ep ON r.escenario_parte_id = ep.id
+                JOIN scenarios e ON ep.escenario_id = e.id
+                JOIN usuarios u ON r.usuario_id_reserva = u.id
+                WHERE r.inquilino_id = ? AND r.area = ?
+                ORDER BY r.fecha_inicio DESC
+            """
+            df = pd.read_sql_query(query, conn, params=(self.tenant_id, user_area))
+            conn.close()
+
+            filename = f"reporte_reservas_{user_area}_{datetime.now().strftime('%Y%m%d')}.xlsx"
+            df.to_excel(filename, index=False)
+            self.page.snack_bar = ft.SnackBar(ft.Text(f"Reporte descargado como {filename}"), bgcolor="green")
+
+        except Exception as ex:
+            self.page.snack_bar = ft.SnackBar(ft.Text(f"Error al exportar: {ex}"), bgcolor="red")
+
+        self.page.snack_bar.open = True
+        self.page.update()
+
+
     def build(self):
         self.cargar_escenarios()
         return ft.View(
@@ -169,6 +228,6 @@ class GestionEscenariosView:
         )
 
 # Wrapper function to be called by the router
-def gestion_escenarios_avanzado_view(page: ft.Page, tenant_id: int):
-    view_instance = GestionEscenariosView(page, tenant_id)
+def gestion_escenarios_avanzado_view(page: ft.Page, tenant_id: int, user_id: int):
+    view_instance = GestionEscenariosView(page, tenant_id, user_id)
     return view_instance.build()

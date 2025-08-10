@@ -246,7 +246,7 @@ def main(page: ft.Page):
 
             elif page.route == '/jefe_escenarios/gestion':
                 if user_role == 'jefe_escenarios':
-                    page.views.append(gestion_escenarios_avanzado_view(page, tenant_id))
+                    page.views.append(gestion_escenarios_avanzado_view(page, tenant_id, user_id))
                 else:
                     page.go('/')
 
