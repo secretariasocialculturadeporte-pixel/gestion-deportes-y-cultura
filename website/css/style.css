@@ -1,7 +1,7 @@
 /* General Body Styles */
 body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    line-height: 1.6;
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.7;
     margin: 0;
     padding: 0;
     background-color: #f4f4f4;
@@ -31,10 +31,16 @@ header nav a {
 
 /* Section Styles */
 section {
-    padding: 2rem 1rem;
+    padding: 4rem 2rem;
     max-width: 1200px;
     margin: 0 auto;
     text-align: center;
+}
+
+section h2 {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    color: #333;
 }
 
 /* Footer Styles */
@@ -60,6 +66,9 @@ footer {
 .feature-card, .plan-card {
     background: #fff;
     padding: 1.5rem;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
     border-radius: 8px;
     box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     transition: transform 0.3s ease;
@@ -67,6 +76,11 @@ footer {
 
 .feature-card:hover, .plan-card:hover {
     transform: translateY(-5px);
+}
+
+.visible {
+    opacity: 1;
+    transform: translateY(0);
 }
 
 .plan-card .price {
@@ -85,6 +99,25 @@ footer {
     border-bottom: 1px solid #eee;
 }
 
+.plan-card.recommended {
+    transform: scale(1.05);
+    border: 2px solid #00A651;
+    position: relative;
+    overflow: hidden;
+}
+
+.recommended-badge {
+    position: absolute;
+    top: 15px;
+    right: -30px;
+    background: #FFD700;
+    color: #333;
+    padding: 5px 30px;
+    transform: rotate(45deg);
+    font-weight: bold;
+    font-size: 0.8rem;
+}
+
 @media (max-width: 768px) {
     header nav {
         display: flex;
@@ -92,6 +125,17 @@ footer {
     }
     header nav a {
         padding: 5px 0;
+    }
+}
+
+/* Tablet Breakpoint */
+@media (max-width: 1024px) {
+    .features-grid, .pricing-grid {
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    }
+
+    section h2 {
+        font-size: 2.2rem;
     }
 }
 
@@ -134,11 +178,13 @@ footer {
 }
 
 #chatbox-header {
-    background: #333;
+    background: linear-gradient(90deg, #00A651, #007a3d);
     color: white;
     padding: 1rem;
     text-align: center;
     font-weight: bold;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
 }
 
 #chatbox-messages {
@@ -147,29 +193,36 @@ footer {
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 12px;
+    background-color: #f9f9f9;
 }
 
 .chat-message {
-    padding: 10px;
-    border-radius: 8px;
+    padding: 12px 16px;
+    border-radius: 18px;
     max-width: 80%;
+    line-height: 1.5;
 }
 
 .user-message {
-    background: #e0e0e0;
+    background: #e9e9eb;
+    color: #333;
     align-self: flex-end;
+    border-bottom-right-radius: 4px;
 }
 
 .agent-message {
-    background: #d1f0d1;
+    background: #00A651;
+    color: white;
     align-self: flex-start;
+    border-bottom-left-radius: 4px;
 }
 
 
 #chatbox-input-container {
     display: flex;
-    border-top: 1px solid #eee;
+    border-top: 1px solid #ddd;
+    background: #fff;
 }
 
 #chatbox-input {
@@ -177,6 +230,11 @@ footer {
     border: none;
     padding: 1rem;
     outline: none;
+    font-size: 1rem;
+}
+
+#chatbox-input:focus {
+    background: #f9f9f9;
 }
 
 #chatbox-send {
@@ -185,6 +243,11 @@ footer {
     border: none;
     padding: 0 1.5rem;
     cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+#chatbox-send:hover {
+    background: #007a3d;
 }
 
 /* Registration Form Styles */

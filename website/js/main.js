@@ -1,4 +1,22 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // --- Scroll-in Animation Logic ---
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('visible');
+            }
+        });
+    }, {
+        threshold: 0.1 // Trigger when 10% of the element is visible
+    });
+
+    // Observe all cards
+    const cards = document.querySelectorAll('.feature-card, .plan-card');
+    cards.forEach(card => {
+        observer.observe(card);
+    });
+
+    // --- AI Agent Logic ---
     const toggleButton = document.getElementById('ai-agent-toggle');
     const chatbox = document.getElementById('ai-agent-chatbox');
     const messagesContainer = document.getElementById('chatbox-messages');
