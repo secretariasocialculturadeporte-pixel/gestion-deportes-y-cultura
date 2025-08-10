@@ -1,25 +1,32 @@
 import flet as ft
 import json
-from agent.agent_service import process_command
+from agent.agent_service import process_command_langchain
 
 LOGO_PATH = "assets/logo.png"
 COLOR1_HEX = "#FFD700"
 COLOR2_HEX = "#00A651"
 
-def admin_principal(page: ft.Page):
+def admin_principal(page: ft.Page, tenant_id: int): # Now needs tenant_id
 
     def handle_command(e):
         command = command_input.value
         if not command:
             return
 
-        # This is a blocking call. In a real app, you might run this in a separate thread.
-        # Also, the API call inside process_command will fail if the API server isn't running.
-        # We are assuming it would be running for this test.
-        result = process_command(command, page.pubsub)
+        # Show a "thinking" message
+        result_text.value = "El agente está pensando..."
+        page.update()
 
-        # Display the raw result for debugging
-        result_text.value = json.dumps(result, indent=2, ensure_ascii=False)
+        # In a real app, you'd run this in a thread to avoid blocking the UI
+        result = process_command_langchain(command, tenant_id, page.pubsub)
+
+        # The PubSub system will handle UI updates for successful tool calls.
+        # This text area will show the final friendly response from the agent.
+        if "error" in result:
+            result_text.value = f"Error: {result['error']}\nDetalles: {result.get('details', '')}"
+        else:
+            result_text.value = result.get("agent_response", "No se recibió respuesta del agente.")
+
         page.update()
 
     command_input = ft.TextField(label="Escriba un comando para el agente AI...", expand=True)
@@ -64,6 +71,11 @@ def admin_principal(page: ft.Page):
                     title=ft.Text("🏛️ Gestión de Áreas"),
                     subtitle=ft.Text("Asignar jefes a las áreas de Cultura y Deportes"),
                     on_click=lambda _: page.go("/admin/areas")
+                ),
+                ft.ListTile(
+                    title=ft.Text("🤖 Configuración de IA"),
+                    subtitle=ft.Text("Configura tu API Key de Google AI Studio"),
+                    on_click=lambda _: page.go("/admin/configuracion_ia")
                 ),
                 ft.Divider(height=20),
                 ft.Text("Asistente de IA", size=18, weight="bold"),

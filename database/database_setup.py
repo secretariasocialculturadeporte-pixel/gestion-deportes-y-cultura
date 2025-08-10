@@ -14,6 +14,7 @@ def setup_database():
         fecha_suscripcion TEXT,
         plan TEXT, -- 'gratis', 'mensual', 'anual'
         api_key TEXT UNIQUE,
+        google_api_key TEXT, -- For per-tenant AI features
         activo INTEGER DEFAULT 1,
         -- New location columns
         direccion TEXT,

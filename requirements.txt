@@ -3,3 +3,6 @@ pandas
 fpdf
 Flask
 requests
+langchain
+langgraph
+langchain-google-genai
