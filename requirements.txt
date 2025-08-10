@@ -6,3 +6,5 @@ requests
 langchain
 langgraph
 langchain-google-genai
+scikit-learn
+matplotlib

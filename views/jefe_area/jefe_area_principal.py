@@ -23,7 +23,11 @@ def jefe_area_principal_view(page: ft.Page):
                     subtitle=ft.Text("Crear y administrar coordinadores y profesores"),
                     on_click=lambda _: page.go("/jefe_area/equipo")
                 ),
-                # Add other jefe_area specific links here later
+                ft.ListTile(
+                    title=ft.Text("📈 Panel de Análisis"),
+                    subtitle=ft.Text("Ver análisis y reportes de datos de tu área"),
+                    on_click=lambda _: page.go("/jefe_area/analisis")
+                ),
             ], scroll=ft.ScrollMode.AUTO)
         )
     ])
