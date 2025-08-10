@@ -410,4 +410,17 @@ if __name__ == "__main__":
 
     setup_dummy_data()
 
-    ft.app(target=main, assets_dir="assets")
+    # PWA Manifest Configuration
+    manifest = ft.PwaManifest(
+        name="Gestión-App de Formación",
+        short_name="GestiónApp",
+        description="Una aplicación para gestionar centros de formación cultural y deportiva.",
+        theme_color=COLOR2_HEX,
+        bgcolor=COLOR1_HEX,
+        icons=[
+            ft.PwaIcon(src="assets/icons/icon-192.png", sizes="192x192"),
+            ft.PwaIcon(src="assets/icons/icon-512.png", sizes="512x512"),
+        ],
+    )
+
+    ft.app(target=main, assets_dir="assets", pwa_manifest=manifest)
