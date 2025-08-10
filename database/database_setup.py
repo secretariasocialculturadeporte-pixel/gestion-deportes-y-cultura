@@ -151,6 +151,7 @@ def setup_database():
         ubicacion TEXT,
         capacidad INTEGER,
         tipo TEXT,
+        area TEXT CHECK(area IN ('Cultura', 'Deportes')), -- Can be NULL if it's a general tenant scenario
         FOREIGN KEY (inquilino_id) REFERENCES inquilinos(id)
     );
 
@@ -161,6 +162,7 @@ def setup_database():
         nombre_parte TEXT NOT NULL, -- e.g., "Cancha Principal", "Salón A"
         descripcion TEXT,
         capacidad INTEGER,
+        area TEXT CHECK(area IN ('Cultura', 'Deportes')),
         FOREIGN KEY (inquilino_id) REFERENCES inquilinos(id),
         FOREIGN KEY (escenario_id) REFERENCES escenarios(id)
     );
@@ -175,6 +177,7 @@ def setup_database():
         fecha_inicio TEXT NOT NULL,
         fecha_fin TEXT NOT NULL,
         estado TEXT DEFAULT 'Confirmada', -- "Confirmada", "Cancelada"
+        area TEXT CHECK(area IN ('Cultura', 'Deportes')),
         FOREIGN KEY (inquilino_id) REFERENCES inquilinos(id),
         FOREIGN KEY (escenario_parte_id) REFERENCES escenario_partes(id),
         FOREIGN KEY (usuario_id_reserva) REFERENCES usuarios(id)
@@ -239,6 +242,7 @@ def setup_database():
         inquilino_id INTEGER NOT NULL,
         codigo TEXT NOT NULL,
         descripcion TEXT,
+        area TEXT CHECK(area IN ('Cultura', 'Deportes')),
         UNIQUE(inquilino_id, codigo),
         FOREIGN KEY (inquilino_id) REFERENCES inquilinos(id)
     );
@@ -259,6 +263,7 @@ def setup_database():
         observaciones_entrega TEXT,
         foto_entrega TEXT,
         estado_entrega TEXT,
+        area TEXT CHECK(area IN ('Cultura', 'Deportes')),
         FOREIGN KEY (inquilino_id) REFERENCES inquilinos(id),
         FOREIGN KEY (elemento_id) REFERENCES elementos(id),
         FOREIGN KEY (instructor_id) REFERENCES profesores(id),

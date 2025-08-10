@@ -7,10 +7,28 @@ LOGO_PATH = "assets/logo.png"
 COLOR1_HEX = "#FFD700"
 COLOR2_HEX = "#00A651"
 
-def almacenista_gestion_elementos(page: ft.Page, tenant_id: int, almacenista_id: int):
+def almacenista_gestion_elementos(page: ft.Page, tenant_id: int, jefe_almacen_id: int):
+
+    # Determine the area of this almacenista's manager (jefe_area)
+    conn = sqlite3.connect("formacion.db")
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT ja.area_responsabilidad
+        FROM usuarios u
+        JOIN jefes_area ja ON u.reporta_a_usuario_id = ja.usuario_id
+        WHERE u.id = ?
+    """, (jefe_almacen_id,))
+    result = cursor.fetchone()
+    user_area = result[0] if result else None
+    conn.close()
+
+    if not user_area:
+        # If user has no area, they can't manage anything. Return a disabled view.
+        return ft.View("/almacenista/elementos", [ft.AppBar(title=ft.Text("Error")), ft.Text("Este usuario no está asignado a un área (Cultura o Deportes).")])
+
     # --- WIDGETS ---
     # Form for adding a new loan/prestamo
-    codigo_input = ft.TextField(label="Código del Elemento")
+    codigo_input = ft.TextField(label=f"Código del Elemento ({user_area})")
     descripcion_input = ft.TextField(label="Descripción")
     observaciones_input = ft.TextField(label="Observaciones (Estado inicial)", multiline=True)
     instructores_dropdown = ft.Dropdown(label="Asignar a Instructor")
@@ -27,14 +45,18 @@ def almacenista_gestion_elementos(page: ft.Page, tenant_id: int, almacenista_id:
         conn = sqlite3.connect("formacion.db")
         cursor = conn.cursor()
 
-        # Cargar instructores del tenant
+        # Cargar instructores del area
         try:
-            cursor.execute("SELECT id, nombre_completo FROM usuarios WHERE inquilino_id = ? AND rol = 'profesor'", (tenant_id,))
+            cursor.execute("""
+                SELECT u.id, u.nombre_completo FROM usuarios u
+                JOIN profesores p ON u.id = p.usuario_id
+                WHERE u.inquilino_id = ? AND p.area = ?
+            """, (tenant_id, user_area))
             instructores_dropdown.options = [ft.dropdown.Option(str(row[0]), row[1]) for row in cursor.fetchall()]
         except Exception as e:
             print(f"Error loading instructors: {e}")
 
-        # Cargar prestamos activos del tenant
+        # Cargar prestamos activos del area
         try:
             tabla_prestamos.columns = [
                 ft.DataColumn(ft.Text("Código")),
@@ -48,8 +70,8 @@ def almacenista_gestion_elementos(page: ft.Page, tenant_id: int, almacenista_id:
                 FROM prestamos pr
                 JOIN elementos e ON pr.elemento_id = e.id
                 JOIN usuarios u ON pr.instructor_id = u.id
-                WHERE pr.estado = 'En uso' AND pr.inquilino_id = ?
-            """, (tenant_id,))
+                WHERE pr.estado = 'En uso' AND pr.inquilino_id = ? AND pr.area = ?
+            """, (tenant_id, user_area))
             tabla_prestamos.rows = [
                 ft.DataRow(cells=[ft.DataCell(ft.Text(str(cell))) for cell in row])
                 for row in cursor.fetchall()
@@ -70,24 +92,24 @@ def almacenista_gestion_elementos(page: ft.Page, tenant_id: int, almacenista_id:
         conn = sqlite3.connect("formacion.db")
         cursor = conn.cursor()
         try:
-            # Step 1: Create the element if it doesn't exist for this tenant, or find it.
-            cursor.execute("SELECT id FROM elementos WHERE codigo = ? AND inquilino_id = ?", (codigo_input.value, tenant_id))
+            # Step 1: Create the element if it doesn't exist for this tenant and area, or find it.
+            cursor.execute("SELECT id FROM elementos WHERE codigo = ? AND inquilino_id = ? AND area = ?", (codigo_input.value, tenant_id, user_area))
             elemento = cursor.fetchone()
             if elemento:
                 elemento_id = elemento[0]
             else:
-                cursor.execute("INSERT INTO elementos (inquilino_id, codigo, descripcion) VALUES (?, ?, ?)",
-                               (tenant_id, codigo_input.value, descripcion_input.value))
+                cursor.execute("INSERT INTO elementos (inquilino_id, codigo, descripcion, area) VALUES (?, ?, ?, ?)",
+                               (tenant_id, codigo_input.value, descripcion_input.value, user_area))
                 elemento_id = cursor.lastrowid
 
-            # Step 2: Create the loan record (prestamo) for this tenant
+            # Step 2: Create the loan record (prestamo) for this tenant and area
             foto_path = foto_picker.result.files[0].path # Simplified path
             cursor.execute("""
-                INSERT INTO prestamos (inquilino_id, elemento_id, instructor_id, almacenista_id, fecha_prestamo, observaciones_prestamo, foto_prestamo, estado)
-                VALUES (?, ?, ?, ?, ?, ?, ?, 'En uso')
+                INSERT INTO prestamos (inquilino_id, elemento_id, instructor_id, almacenista_id, fecha_prestamo, observaciones_prestamo, foto_prestamo, estado, area)
+                VALUES (?, ?, ?, ?, ?, ?, ?, 'En uso', ?)
             """, (
-                tenant_id, elemento_id, int(instructores_dropdown.value), almacenista_id,
-                datetime.now().strftime('%Y-%m-%d'), observaciones_input.value, foto_path
+                tenant_id, elemento_id, int(instructores_dropdown.value), jefe_almacen_id,
+                datetime.now().strftime('%Y-%m-%d'), observaciones_input.value, foto_path, user_area
             ))
             conn.commit()
             mensaje_estado.value = "Préstamo registrado exitosamente."

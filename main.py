@@ -365,7 +365,11 @@ if __name__ == "__main__":
                      cursor.execute("INSERT INTO jefes_area (usuario_id, inquilino_id, area_responsabilidad) VALUES (?, ?, ?)", (user_id, tenant_id, area))
                 elif role == 'profesor':
                     # This needs to be smarter, getting the area from its manager
-                    cursor.execute("INSERT INTO profesores (usuario_id, inquilino_id, area) VALUES (?, ?, 'Deportes')", (user_id, tenant_id))
+                    cursor.execute("INSERT INTO profesores (usuario_id, inquilino_id, area) VALUES (?, ?, 'Deportes')", (user_id, tenant_id)) # Simplified
+                elif role == 'jefe_almacen':
+                     cursor.execute("INSERT INTO jefes_almacen (usuario_id, inquilino_id) VALUES (?, ?)", (user_id, tenant_id))
+                elif role == 'jefe_escenarios':
+                     cursor.execute("INSERT INTO jefes_escenarios (usuario_id, inquilino_id) VALUES (?, ?)", (user_id, tenant_id))
                 elif role == 'alumno':
                     cursor.execute("INSERT INTO alumnos (usuario_id, inquilino_id, documento) VALUES (?, ?, ?)", (user_id, tenant_id, f"12345{user_id}"))
                 elif role == 'almacenista':
@@ -376,11 +380,15 @@ if __name__ == "__main__":
 
             # Create the hierarchy
             admin_id = add_dummy_user("admin_empresa", "123", "admin_empresa", "Admin Empresa Demo")
+
             jefe_deportes_id = add_dummy_user("jefe_deportes", "123", "jefe_area", "Jefe de Deportes", reports_to_id=admin_id)
             add_dummy_user("profe_futbol", "123", "profesor", "Profesor de Fútbol", reports_to_id=jefe_deportes_id)
+            add_dummy_user("almacen_deportes", "123", "jefe_almacen", "Jefe Almacén de Deportes", reports_to_id=jefe_deportes_id)
+
+            jefe_cultura_id = add_dummy_user("jefe_cultura", "123", "jefe_area", "Jefe de Cultura", reports_to_id=admin_id)
+            add_dummy_user("profe_musica", "123", "profesor", "Profesor de Música", reports_to_id=jefe_cultura_id)
+
             add_dummy_user("alumno", "123", "alumno", "Alumno Demo")
-            add_dummy_user("almacen", "123", "almacenista", "Almacenista Demo")
-            add_dummy_user("jefe_escenarios", "123", "jefe_escenarios", "Jefe de Escenarios", reports_to_id=admin_id)
 
             # 4. Add dummy scenarios and parts
             cursor.execute("SELECT id FROM escenarios WHERE nombre = 'Estadio Municipal' AND inquilino_id = ?", (tenant_id,))

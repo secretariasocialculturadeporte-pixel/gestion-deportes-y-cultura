@@ -2,7 +2,7 @@ import flet as ft
 import sqlite3
 from views.login import hash_password
 
-LOGO_PATH = "../../assets/logo.png" # Path is relative to the main.py file
+LOGO_PATH = "../../assets/logo.png"
 COLOR1_HEX = "#FFD700"
 COLOR2_HEX = "#00A651"
 
@@ -23,7 +23,15 @@ def gestion_equipo_view(page: ft.Page, tenant_id: int, jefe_area_id: int):
             conn = sqlite3.connect("formacion.db")
             cursor = conn.cursor()
             try:
-                # Insert into usuarios table, with reporta_a_usuario_id set to the current user
+                # Get the area of the current Jefe de Área
+                cursor.execute("SELECT area_responsabilidad FROM jefes_area WHERE usuario_id = ?", (jefe_area_id,))
+                area_jefe = cursor.fetchone()[0]
+                if not area_jefe:
+                    print("Error: El jefe de área no tiene un área asignada.")
+                    conn.close()
+                    return
+
+                # Insert into usuarios table
                 cursor.execute("""
                     INSERT INTO usuarios (inquilino_id, nombre_usuario, password_hash, rol, nombre_completo, correo, reporta_a_usuario_id)
                     VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -33,24 +41,19 @@ def gestion_equipo_view(page: ft.Page, tenant_id: int, jefe_area_id: int):
                 ))
                 new_user_id = cursor.lastrowid
 
-                # Get the area of the current Jefe de Área
-                cursor.execute("SELECT area_responsabilidad FROM jefes_area WHERE usuario_id = ?", (jefe_area_id,))
-                area_jefe = cursor.fetchone()[0]
-                if not area_jefe:
-                    # This jefe is not yet assigned to an area, so they can't create subordinates
-                    # In a real app, we would show a proper error message.
-                    print("Error: El jefe de área no tiene un área asignada.")
-                    conn.rollback()
-                    return
-
                 # Insert into role-specific table with the correct area
                 if rol_a_crear == 'coordinador':
-                    # Coordinadores don't have an area column in the schema, they inherit from their jefe
                     cursor.execute("INSERT INTO coordinadores (usuario_id, inquilino_id, jefe_area_id) VALUES (?, ?, ?)",
                                    (new_user_id, tenant_id, jefe_area_id))
                 elif rol_a_crear == 'profesor':
                      cursor.execute("INSERT INTO profesores (usuario_id, inquilino_id, area) VALUES (?, ?, ?)",
                                    (new_user_id, tenant_id, area_jefe))
+                elif rol_a_crear == 'jefe_almacen':
+                     cursor.execute("INSERT INTO jefes_almacen (usuario_id, inquilino_id) VALUES (?, ?)",
+                                   (new_user_id, tenant_id)) # The area is implicit via the manager
+                elif rol_a_crear == 'jefe_escenarios':
+                     cursor.execute("INSERT INTO jefes_escenarios (usuario_id, inquilino_id) VALUES (?, ?)",
+                                   (new_user_id, tenant_id))
 
                 conn.commit()
                 page.dialog.open = False
@@ -63,7 +66,7 @@ def gestion_equipo_view(page: ft.Page, tenant_id: int, jefe_area_id: int):
 
         return ft.AlertDialog(
             modal=True,
-            title=ft.Text(f"Crear Nuevo {rol_a_crear.title()}"),
+            title=ft.Text(f"Crear Nuevo {rol_a_crear.replace('_', ' ').title()}"),
             content=ft.Column([
                 nombre_completo_input, nombre_usuario_input, password_input, correo_input
             ], tight=True),
@@ -128,6 +131,8 @@ def gestion_equipo_view(page: ft.Page, tenant_id: int, jefe_area_id: int):
                     ft.Row([
                         ft.ElevatedButton("Crear Coordinador", on_click=lambda e: handle_crear_subordinado(e, "coordinador"), icon=ft.icons.ADD),
                         ft.ElevatedButton("Crear Profesor", on_click=lambda e: handle_crear_subordinado(e, "profesor"), icon=ft.icons.ADD),
+                        ft.ElevatedButton("Crear Jefe de Almacén de Área", on_click=lambda e: handle_crear_subordinado(e, "jefe_almacen"), icon=ft.icons.STORE),
+                        ft.ElevatedButton("Crear Jefe de Escenarios de Área", on_click=lambda e: handle_crear_subordinado(e, "jefe_escenarios"), icon=ft.icons.SPORTS_SOCCER),
                     ]),
                     ft.Divider(),
                     tabla_equipo,
