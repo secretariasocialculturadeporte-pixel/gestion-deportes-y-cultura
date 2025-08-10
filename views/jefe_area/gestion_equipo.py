@@ -33,13 +33,24 @@ def gestion_equipo_view(page: ft.Page, tenant_id: int, jefe_area_id: int):
                 ))
                 new_user_id = cursor.lastrowid
 
-                # Insert into role-specific table
+                # Get the area of the current Jefe de Área
+                cursor.execute("SELECT area_responsabilidad FROM jefes_area WHERE usuario_id = ?", (jefe_area_id,))
+                area_jefe = cursor.fetchone()[0]
+                if not area_jefe:
+                    # This jefe is not yet assigned to an area, so they can't create subordinates
+                    # In a real app, we would show a proper error message.
+                    print("Error: El jefe de área no tiene un área asignada.")
+                    conn.rollback()
+                    return
+
+                # Insert into role-specific table with the correct area
                 if rol_a_crear == 'coordinador':
+                    # Coordinadores don't have an area column in the schema, they inherit from their jefe
                     cursor.execute("INSERT INTO coordinadores (usuario_id, inquilino_id, jefe_area_id) VALUES (?, ?, ?)",
                                    (new_user_id, tenant_id, jefe_area_id))
                 elif rol_a_crear == 'profesor':
-                     cursor.execute("INSERT INTO profesores (usuario_id, inquilino_id) VALUES (?, ?)",
-                                   (new_user_id, tenant_id))
+                     cursor.execute("INSERT INTO profesores (usuario_id, inquilino_id, area) VALUES (?, ?, ?)",
+                                   (new_user_id, tenant_id, area_jefe))
 
                 conn.commit()
                 page.dialog.open = False

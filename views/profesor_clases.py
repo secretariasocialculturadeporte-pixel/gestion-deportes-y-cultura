@@ -53,13 +53,18 @@ def profesor_clases(page: ft.Page, tenant_id: int, profesor_id: int):
 
             conn = sqlite3.connect("formacion.db")
             cursor = conn.cursor()
+
+            # Get the professor's area
+            cursor.execute("SELECT area FROM profesores WHERE usuario_id = ? AND inquilino_id = ?", (profesor_id, tenant_id))
+            profesor_area = cursor.fetchone()[0]
+
             cursor.execute("""
-                INSERT INTO clases (inquilino_id, nombre_clase, proceso_id, instructor_id, fecha, hora_inicio, hora_fin, escenario_id, espacio, grupo, novedad)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO clases (inquilino_id, nombre_clase, proceso_id, instructor_id, fecha, hora_inicio, hora_fin, escenario_id, espacio, grupo, novedad, area)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 tenant_id, nombre_clase.value, int(proceso_dropdown.value), profesor_id, fecha.value,
                 hora_inicio.value, hora_fin.value, int(escenario_dropdown.value),
-                espacio_input.value, grupo_dropdown.value, novedad.value
+                espacio_input.value, grupo_dropdown.value, novedad.value, profesor_area
             ))
             conn.commit()
             mensaje.value = "Clase guardada exitosamente."

@@ -24,6 +24,7 @@ from views.admin_principal import admin_principal
 from views.admin_empresa.gestion_personal import gestion_personal_view
 from views.jefe_area.jefe_area_principal import jefe_area_principal_view
 from views.jefe_area.gestion_equipo import gestion_equipo_view
+from views.admin_empresa.gestion_areas import gestion_areas_view
 from views.jefe_escenarios.jefe_escenarios_principal import jefe_escenarios_principal_view
 from views.jefe_escenarios.gestion_escenarios import gestion_escenarios_avanzado_view
 from views.jefe_escenarios.gestion_reservas import gestion_reservas_view
@@ -212,6 +213,12 @@ def main(page: ft.Page):
                 else:
                     page.go('/')
 
+            elif page.route == '/admin/areas':
+                if user_role == 'admin_empresa':
+                    page.views.append(gestion_areas_view(page, tenant_id))
+                else:
+                    page.go('/')
+
             elif page.route == '/jefe_area/home':
                 if user_role == 'jefe_area':
                     page.views.append(jefe_area_principal_view(page))
@@ -346,9 +353,12 @@ if __name__ == "__main__":
 
                 # Create role-specific record
                 if role == 'jefe_area':
-                     cursor.execute("INSERT INTO jefes_area (usuario_id, inquilino_id) VALUES (?, ?)", (user_id, tenant_id))
+                     # We can pre-assign an area here for dummy data purposes
+                     area = "Deportes" if "deportes" in username else "Cultura" if "cultura" in username else None
+                     cursor.execute("INSERT INTO jefes_area (usuario_id, inquilino_id, area_responsabilidad) VALUES (?, ?, ?)", (user_id, tenant_id, area))
                 elif role == 'profesor':
-                    cursor.execute("INSERT INTO profesores (usuario_id, inquilino_id) VALUES (?, ?)", (user_id, tenant_id))
+                    # This needs to be smarter, getting the area from its manager
+                    cursor.execute("INSERT INTO profesores (usuario_id, inquilino_id, area) VALUES (?, ?, 'Deportes')", (user_id, tenant_id))
                 elif role == 'alumno':
                     cursor.execute("INSERT INTO alumnos (usuario_id, inquilino_id, documento) VALUES (?, ?, ?)", (user_id, tenant_id, f"12345{user_id}"))
                 elif role == 'almacenista':

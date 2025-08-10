@@ -60,6 +60,11 @@ def admin_principal(page: ft.Page):
                     subtitle=ft.Text("Crear y administrar usuarios de la empresa"),
                     on_click=lambda _: page.go("/admin/personal")
                 ),
+                ft.ListTile(
+                    title=ft.Text("🏛️ Gestión de Áreas"),
+                    subtitle=ft.Text("Asignar jefes a las áreas de Cultura y Deportes"),
+                    on_click=lambda _: page.go("/admin/areas")
+                ),
                 ft.Divider(height=20),
                 ft.Text("Asistente de IA", size=18, weight="bold"),
                 ft.Row([command_input, submit_button]),

@@ -52,7 +52,7 @@ def setup_database():
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         usuario_id INTEGER UNIQUE NOT NULL,
         inquilino_id INTEGER NOT NULL,
-        area TEXT,
+        area TEXT NOT NULL CHECK(area IN ('Cultura', 'Deportes')),
         telefono TEXT,
         FOREIGN KEY (usuario_id) REFERENCES usuarios(id),
         FOREIGN KEY (inquilino_id) REFERENCES inquilinos(id)
@@ -62,7 +62,7 @@ def setup_database():
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         usuario_id INTEGER UNIQUE NOT NULL,
         inquilino_id INTEGER NOT NULL,
-        area_responsabilidad TEXT, -- 'Cultura' o 'Deporte'
+        area_responsabilidad TEXT CHECK(area_responsabilidad IN ('Cultura', 'Deportes')), -- Now nullable
         FOREIGN KEY (usuario_id) REFERENCES usuarios(id),
         FOREIGN KEY (inquilino_id) REFERENCES inquilinos(id)
     );
@@ -194,6 +194,7 @@ def setup_database():
         espacio TEXT,
         grupo TEXT,
         novedad TEXT,
+        area TEXT NOT NULL CHECK(area IN ('Cultura', 'Deportes')),
         FOREIGN KEY (inquilino_id) REFERENCES inquilinos(id),
         FOREIGN KEY (proceso_id) REFERENCES procesos_formacion(id),
         FOREIGN KEY (instructor_id) REFERENCES profesores(id),
@@ -209,6 +210,7 @@ def setup_database():
         clase_id INTEGER,
         fecha_inscripcion TEXT,
         nivel_formacion TEXT,
+        area TEXT NOT NULL CHECK(area IN ('Cultura', 'Deportes')),
         FOREIGN KEY (inquilino_id) REFERENCES inquilinos(id),
         FOREIGN KEY (alumno_id) REFERENCES alumnos(id),
         FOREIGN KEY (clase_id) REFERENCES clases(id)
