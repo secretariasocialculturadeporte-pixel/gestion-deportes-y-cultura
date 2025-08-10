@@ -27,9 +27,73 @@ from views.jefe_area.gestion_equipo import gestion_equipo_view
 from views.jefe_escenarios.jefe_escenarios_principal import jefe_escenarios_principal_view
 from views.jefe_escenarios.gestion_escenarios import gestion_escenarios_avanzado_view
 from views.jefe_escenarios.gestion_reservas import gestion_reservas_view
+from views.splash import splash_view
+from views.forgot_password import forgot_password_view
+from views.reset_password import reset_password_view
+
+import os
 
 def main(page: ft.Page):
     page.title = "Sistema de Gestión de Formación"
+
+    # --- OAuth Providers Configuration ---
+    # The user must replace these with their own credentials from Google/Microsoft Developer Consoles.
+    # It's best to use environment variables for this.
+    google_client_id = os.getenv("GOOGLE_CLIENT_ID", "YOUR_GOOGLE_CLIENT_ID")
+    microsoft_client_id = os.getenv("MICROSOFT_CLIENT_ID", "YOUR_MICROSOFT_CLIENT_ID")
+    microsoft_client_secret = os.getenv("MICROSOFT_CLIENT_SECRET", "YOUR_MICROSOFT_CLIENT_SECRET")
+
+    def on_oauth_login(e: ft.LoginEvent):
+        if e.error:
+            # Handle login error
+            print(f"Error de OAuth: {e.error_description}")
+            # You could show a snackbar here
+        else:
+            # This is a successful login.
+            # For B2B SaaS, we assume the user must already exist in the system,
+            # created by a tenant admin. We find the user by email.
+            user_info = e.user
+            email = user_info['email']
+
+            conn = sqlite3.connect("formacion.db")
+            cursor = conn.cursor()
+            cursor.execute("SELECT id, rol, nombre_completo, inquilino_id FROM usuarios WHERE correo = ?", (email,))
+            db_user = cursor.fetchone()
+            conn.close()
+
+            if db_user:
+                # User exists, log them in
+                user_id, user_role, user_name, tenant_id = db_user
+                page.session.set("user_id", user_id)
+                page.session.set("user_role", user_role)
+                page.session.set("user_name", user_name)
+                page.session.set("tenant_id", tenant_id)
+                print(f"Usuario OAuth '{email}' encontrado. Iniciando sesión para el inquilino {tenant_id}.")
+                # Redirect to their correct home page
+                if user_role == 'profesor': page.go("/profesor_home")
+                elif user_role == 'alumno': page.go("/alumno_clases")
+                elif user_role == 'admin_empresa': page.go("/admin_home")
+                else: page.go("/") # Fallback
+            else:
+                # User not found in DB. They cannot log in.
+                print(f"Usuario OAuth '{email}' no encontrado en la base de datos. Acceso denegado.")
+                # Optionally, show an error on the login page
+                page.go("/login?error=oauth_user_not_found")
+
+
+    google_provider = ft.GoogleOAuthProvider(
+        client_id=google_client_id,
+        redirect_url=page.get_url(), # Flet handles the redirect URL
+        on_login=on_oauth_login,
+    )
+
+    microsoft_provider = ft.MicrosoftOAuthProvider(
+        client_id=microsoft_client_id,
+        client_secret=microsoft_client_secret,
+        redirect_url=page.get_url(),
+        on_login=on_oauth_login,
+    )
+
 
     def route_change(route):
         page.views.clear()
@@ -38,17 +102,24 @@ def main(page: ft.Page):
         user_role = page.session.get("user_role")
         tenant_id = page.session.get("tenant_id")
 
-        # --- unprotected routes ---
-        if page.route == '/':
-            page.views.append(login_view(page))
-        # --- protected routes ---
+        # --- Public / Unprotected Routes ---
+        if page.route == "/":
+            page.views.append(splash_view(page))
+        elif page.route == "/login":
+            page.views.append(login_view(page, google_provider, microsoft_provider))
+        elif page.route == "/forgot_password":
+            page.views.append(forgot_password_view(page))
+        elif page.route.startswith("/reset_password"):
+            token = page.route.split("/")[-1]
+            page.views.append(reset_password_view(page, token))
+
+        # --- Protected Routes ---
         elif user_id is None or tenant_id is None:
-            # If user is not logged in or has no tenant, redirect to login
-            page.views.append(login_view(page))
-            page.go('/')
+            # If user is not authenticated and tries to access a protected route, redirect to login
+            page.go("/login")
+
         else:
-            # --- Role-based routing ---
-            # Every authenticated view now receives tenant_id
+            # --- Role-based routing for authenticated users ---
             if page.route == '/profesor_home':
                 if user_role == 'profesor':
                     page.views.append(profesor_principal(page))

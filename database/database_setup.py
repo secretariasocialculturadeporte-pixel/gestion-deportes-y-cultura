@@ -29,6 +29,8 @@ def setup_database():
         nombre_completo TEXT,
         correo TEXT,
         reporta_a_usuario_id INTEGER, -- For hierarchy
+        reset_token TEXT,
+        reset_token_expires TEXT,
         activo INTEGER DEFAULT 1,
         UNIQUE(inquilino_id, nombre_usuario),
         FOREIGN KEY (inquilino_id) REFERENCES inquilinos(id),
