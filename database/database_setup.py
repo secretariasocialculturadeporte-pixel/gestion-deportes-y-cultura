@@ -144,6 +144,32 @@ def setup_database():
         tipo TEXT,
         FOREIGN KEY (inquilino_id) REFERENCES inquilinos(id)
     );
+
+    CREATE TABLE IF NOT EXISTS escenario_partes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        inquilino_id INTEGER NOT NULL,
+        escenario_id INTEGER NOT NULL,
+        nombre_parte TEXT NOT NULL, -- e.g., "Cancha Principal", "Salón A"
+        descripcion TEXT,
+        capacidad INTEGER,
+        FOREIGN KEY (inquilino_id) REFERENCES inquilinos(id),
+        FOREIGN KEY (escenario_id) REFERENCES escenarios(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS reservas (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        inquilino_id INTEGER NOT NULL,
+        escenario_parte_id INTEGER NOT NULL,
+        usuario_id_reserva INTEGER NOT NULL,
+        proposito TEXT, -- "Clase", "Evento", "Reunión", etc.
+        descripcion_proposito TEXT,
+        fecha_inicio TEXT NOT NULL,
+        fecha_fin TEXT NOT NULL,
+        estado TEXT DEFAULT 'Confirmada', -- "Confirmada", "Cancelada"
+        FOREIGN KEY (inquilino_id) REFERENCES inquilinos(id),
+        FOREIGN KEY (escenario_parte_id) REFERENCES escenario_partes(id),
+        FOREIGN KEY (usuario_id_reserva) REFERENCES usuarios(id)
+    );
     """)
 
     cursor.execute("""

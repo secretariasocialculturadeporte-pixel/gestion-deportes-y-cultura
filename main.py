@@ -24,6 +24,9 @@ from views.admin_principal import admin_principal
 from views.admin_empresa.gestion_personal import gestion_personal_view
 from views.jefe_area.jefe_area_principal import jefe_area_principal_view
 from views.jefe_area.gestion_equipo import gestion_equipo_view
+from views.jefe_escenarios.jefe_escenarios_principal import jefe_escenarios_principal_view
+from views.jefe_escenarios.gestion_escenarios import gestion_escenarios_avanzado_view
+from views.jefe_escenarios.gestion_reservas import gestion_reservas_view
 
 def main(page: ft.Page):
     page.title = "Sistema de Gestión de Formación"
@@ -150,6 +153,29 @@ def main(page: ft.Page):
                 else:
                     page.go('/')
 
+            elif page.route == '/jefe_escenarios/home':
+                if user_role == 'jefe_escenarios':
+                    page.views.append(jefe_escenarios_principal_view(page))
+                else:
+                    page.go('/')
+
+            elif page.route == '/jefe_escenarios/gestion':
+                if user_role == 'jefe_escenarios':
+                    page.views.append(gestion_escenarios_avanzado_view(page, tenant_id))
+                else:
+                    page.go('/')
+
+            # Dynamic route for reservations
+            elif page.route.startswith('/jefe_escenarios/reservas/'):
+                if user_role == 'jefe_escenarios':
+                    try:
+                        parte_id = int(page.route.split('/')[-1])
+                        page.views.append(gestion_reservas_view(page, tenant_id, parte_id))
+                    except (ValueError, IndexError):
+                        page.go('/jefe_escenarios/home') # Go home if ID is invalid
+                else:
+                    page.go('/')
+
             else:
                 # If route doesn't exist, go to a default page based on role
                 if user_role == 'profesor':
@@ -259,6 +285,17 @@ if __name__ == "__main__":
             add_dummy_user("profe_futbol", "123", "profesor", "Profesor de Fútbol", reports_to_id=jefe_deportes_id)
             add_dummy_user("alumno", "123", "alumno", "Alumno Demo")
             add_dummy_user("almacen", "123", "almacenista", "Almacenista Demo")
+            add_dummy_user("jefe_escenarios", "123", "jefe_escenarios", "Jefe de Escenarios", reports_to_id=admin_id)
+
+            # 4. Add dummy scenarios and parts
+            cursor.execute("SELECT id FROM escenarios WHERE nombre = 'Estadio Municipal' AND inquilino_id = ?", (tenant_id,))
+            if not cursor.fetchone():
+                cursor.execute("INSERT INTO scenarios (inquilino_id, nombre, ubicacion) VALUES (?, ?, ?)",
+                               (tenant_id, 'Estadio Municipal', 'Calle Falsa 123'))
+                escenario_id = cursor.lastrowid
+                cursor.execute("INSERT INTO escenario_partes (inquilino_id, escenario_id, nombre_parte) VALUES (?, ?, ?)",
+                               (tenant_id, escenario_id, 'Cancha Principal'))
+                print("Escenario de prueba creado.")
 
             conn.commit()
 

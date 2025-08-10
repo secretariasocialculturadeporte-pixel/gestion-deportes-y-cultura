@@ -45,6 +45,8 @@ def login_view(page: ft.Page):
                 page.go("/admin_home")
             elif user_role == 'jefe_area':
                 page.go("/jefe_area/home")
+            elif user_role == 'jefe_escenarios':
+                page.go("/jefe_escenarios/home")
             elif user_role == 'almacenista':
                 page.go("/almacenista/elementos")
             else:
