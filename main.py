@@ -31,6 +31,7 @@ from views.jefe_escenarios.jefe_escenarios_principal import jefe_escenarios_prin
 from views.jefe_escenarios.gestion_escenarios import gestion_escenarios_avanzado_view
 from views.jefe_escenarios.gestion_reservas import gestion_reservas_view
 from views.admin_empresa.configuracion_ia import configuracion_ia_view
+from views.super_admin.ccos_main import ccos_main_view
 from views.splash import splash_view
 from views.forgot_password import forgot_password_view
 from views.reset_password import reset_password_view
@@ -118,6 +119,13 @@ def main(page: ft.Page):
             page.views.append(reset_password_view(page, token))
 
         # --- Protected Routes ---
+        # Special case for super admin who has no tenant_id
+        elif user_id and user_role == 'admin_general':
+            if page.route == '/ccos/home':
+                page.views.append(ccos_main_view(page))
+            else:
+                page.go('/ccos/home') # Default for super admin
+
         elif user_id is None or tenant_id is None:
             # If user is not authenticated and tries to access a protected route, redirect to login
             page.go("/login")
@@ -357,19 +365,19 @@ if __name__ == "__main__":
             # 3. Add users for the test tenant in a hierarchy
             # Note: The 'add_dummy_user' function needs to be updated to handle the hierarchy
             def add_dummy_user(username, password, role, name, reports_to_id=None):
-                # Check if user already exists for this tenant
-                cursor.execute("SELECT id FROM usuarios WHERE nombre_usuario = ? AND inquilino_id = ?", (username, tenant_id))
+                # Check if user already exists
+                cursor.execute("SELECT id FROM usuarios WHERE nombre_usuario = ?", (username,))
                 if cursor.fetchone():
-                    print(f"Usuario '{username}' para el inquilino {tenant_id} ya existe.")
-                    # Return existing user's ID for hierarchy
-                    cursor.execute("SELECT id FROM usuarios WHERE nombre_usuario = ? AND inquilino_id = ?", (username, tenant_id))
+                    print(f"Usuario '{username}' ya existe.")
+                    cursor.execute("SELECT id FROM usuarios WHERE nombre_usuario = ?", (username,))
                     return cursor.fetchone()[0]
 
-                # Create user associated with the tenant
+                # Create user, tenant_id can be NULL for admin_general
+                current_tenant_id = None if role == 'admin_general' else tenant_id
                 cursor.execute("""
                     INSERT INTO usuarios (inquilino_id, nombre_usuario, password_hash, rol, nombre_completo, correo, reporta_a_usuario_id)
                     VALUES (?, ?, ?, ?, ?, ?, ?)
-                    """, (tenant_id, username, hash_password(password), role, name, f"{username}@demo.com", reports_to_id))
+                    """, (current_tenant_id, username, hash_password(password), role, name, f"{username}@demo.com", reports_to_id))
                 user_id = cursor.lastrowid
 
                 # Create role-specific record
@@ -394,6 +402,7 @@ if __name__ == "__main__":
 
             # Create the hierarchy
             admin_id = add_dummy_user("admin_empresa", "123", "admin_empresa", "Admin Empresa Demo")
+            add_dummy_user("superadmin", "123", "admin_general", "Super Administrador") # No tenant
 
             jefe_deportes_id = add_dummy_user("jefe_deportes", "123", "jefe_area", "Jefe de Deportes", reports_to_id=admin_id)
             add_dummy_user("profe_futbol", "123", "profesor", "Profesor de Fútbol", reports_to_id=jefe_deportes_id)

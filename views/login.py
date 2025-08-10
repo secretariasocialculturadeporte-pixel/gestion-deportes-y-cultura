@@ -46,6 +46,7 @@ def login_view(page: ft.Page, google_provider, microsoft_provider):
             elif user_role == 'jefe_area': page.go("/jefe_area/home")
             elif user_role == 'jefe_escenarios': page.go("/jefe_escenarios/home")
             elif user_role == 'almacenista': page.go("/almacenista/elementos")
+            elif user_role == 'admin_general': page.go("/ccos/home")
             else: page.go("/")
         else:
             mensaje_login.value = "Usuario o contraseña incorrectos."
