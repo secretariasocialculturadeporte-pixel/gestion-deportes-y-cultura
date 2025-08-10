@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro de Nueva Empresa - Gestión-App</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <header>
+        <h1><a href="index.html" style="color:white; text-decoration:none;">Gestión-App</a></h1>
+    </header>
+
+    <main>
+        <section id="registro-form">
+            <h2>Registra tu Organización</h2>
+            <p>Comienza con una prueba gratuita de 60 días.</p>
+            <form id="form-registro">
+                <h3>Elige tu Plan</h3>
+                <div class="plan-selection">
+                    <label>
+                        <input type="radio" name="plan" value="gratis" checked>
+                        Plan Básico (Prueba de 60 días)
+                    </label>
+                    <label>
+                        <input type="radio" name="plan" value="pro_mensual">
+                        Plan Pro ($100/mes)
+                    </label>
+                    <label>
+                        <input type="radio" name="plan" value="pro_anual">
+                        Plan Pro ($1000/año)
+                    </label>
+                </div>
+
+                <h3>Datos de la Empresa</h3>
+                <input type="text" id="nombre_empresa" placeholder="Nombre de tu Empresa" required>
+
+                <h3>Datos del Administrador Principal</h3>
+                <input type="text" id="nombre_admin" placeholder="Tu Nombre Completo" required>
+                <input type="email" id="correo_admin" placeholder="Tu Correo Electrónico" required>
+                <input type="text" id="usuario_admin" placeholder="Elige un Nombre de Usuario" required>
+                <input type="password" id="password_admin" placeholder="Elige una Contraseña" required>
+
+                <div id="form-mensaje"></div>
+                <button type="submit">Comenzar Prueba Gratuita</button>
+            </form>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2025 Gestión-App. Todos los derechos reservados.</p>
+    </footer>
+
+    <script src="js/register.js"></script>
+</body>
+</html>

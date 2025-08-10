@@ -1,0 +1,271 @@
+/* General Body Styles */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f4;
+    color: #333;
+}
+
+/* Header Styles */
+header {
+    background: #333;
+    color: #fff;
+    padding: 1rem 0;
+    text-align: center;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+header h1 {
+    margin: 0;
+}
+
+header nav a {
+    color: #fff;
+    text-decoration: none;
+    padding: 0 15px;
+}
+
+/* Section Styles */
+section {
+    padding: 2rem 1rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+/* Footer Styles */
+footer {
+    text-align: center;
+    padding: 1rem 0;
+    background: #333;
+    color: #fff;
+    position: relative;
+    bottom: 0;
+    width: 100%;
+}
+
+/* Responsive Design */
+/* Grid Layout for Features and Plans */
+.features-grid, .pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-top: 2rem;
+}
+
+.feature-card, .plan-card {
+    background: #fff;
+    padding: 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    transition: transform 0.3s ease;
+}
+
+.feature-card:hover, .plan-card:hover {
+    transform: translateY(-5px);
+}
+
+.plan-card .price {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #00A651; /* Using a theme color */
+}
+
+.plan-card ul {
+    list-style: none;
+    padding: 0;
+}
+
+.plan-card ul li {
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #eee;
+}
+
+@media (max-width: 768px) {
+    header nav {
+        display: flex;
+        flex-direction: column;
+    }
+    header nav a {
+        padding: 5px 0;
+    }
+}
+
+/* AI Agent Widget Styles */
+#ai-agent-widget {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1001;
+}
+
+#ai-agent-toggle {
+    background: #00A651;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    font-size: 2rem;
+    cursor: pointer;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+#ai-agent-chatbox {
+    width: 350px;
+    height: 500px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    position: absolute;
+    bottom: 80px;
+    right: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+#ai-agent-chatbox.hidden {
+    display: none;
+}
+
+#chatbox-header {
+    background: #333;
+    color: white;
+    padding: 1rem;
+    text-align: center;
+    font-weight: bold;
+}
+
+#chatbox-messages {
+    flex-grow: 1;
+    padding: 1rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.chat-message {
+    padding: 10px;
+    border-radius: 8px;
+    max-width: 80%;
+}
+
+.user-message {
+    background: #e0e0e0;
+    align-self: flex-end;
+}
+
+.agent-message {
+    background: #d1f0d1;
+    align-self: flex-start;
+}
+
+
+#chatbox-input-container {
+    display: flex;
+    border-top: 1px solid #eee;
+}
+
+#chatbox-input {
+    flex-grow: 1;
+    border: none;
+    padding: 1rem;
+    outline: none;
+}
+
+#chatbox-send {
+    background: #00A651;
+    color: white;
+    border: none;
+    padding: 0 1.5rem;
+    cursor: pointer;
+}
+
+/* Registration Form Styles */
+#registro-form form {
+    display: flex;
+    flex-direction: column;
+    max-width: 500px;
+    margin: 2rem auto;
+    gap: 1rem;
+}
+
+#registro-form input {
+    padding: 0.8rem;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+#registro-form h3 {
+    text-align: left;
+    margin-top: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.plan-selection {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    background: #fff;
+    padding: 1rem;
+    border-radius: 5px;
+    text-align: left;
+}
+
+.plan-selection label {
+    cursor: pointer;
+}
+
+#registro-form button {
+    padding: 1rem;
+    background: #00A651;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1.1rem;
+}
+
+#form-mensaje {
+    padding: 1rem;
+    border-radius: 5px;
+    display: none; /* Hidden by default */
+}
+#form-mensaje.message-success {
+    display: block;
+    background-color: #dff0d8;
+    color: #3c763d;
+}
+#form-mensaje.message-error {
+    display: block;
+    background-color: #f2dede;
+    color: #a94442;
+}
+#form-mensaje.message-info {
+    display: block;
+    background-color: #d9edf7;
+    color: #31708f;
+}
+
+/* Call to Action Button Styles */
+.cta-button, .plan-button {
+    display: inline-block;
+    padding: 1rem 2rem;
+    background: #FFD700; /* Gold color for contrast */
+    color: #333;
+    text-decoration: none;
+    border-radius: 5px;
+    font-weight: bold;
+    margin-top: 1rem;
+    transition: background-color 0.3s ease;
+}
+
+.cta-button:hover, .plan-button:hover {
+    background: #f0c400;
+}

@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plataforma de Gestión Cultural y Deportiva</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <header>
+        <h1>Gestión-App</h1>
+        <nav>
+            <a href="#funcionalidades">Funcionalidades</a>
+            <a href="#planes">Planes</a>
+            <a href="#registro">Registrarse</a>
+        </nav>
+    </header>
+
+    <main>
+        <!-- Sections will be added in the next step -->
+        <section id="hero">
+            <h2>Transforma la gestión de tu organización</h2>
+            <p>La solución todo-en-uno para centros culturales y deportivos.</p>
+        </section>
+
+        <section id="funcionalidades">
+            <h2>Funcionalidades Clave</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <h3>Gestión Multi-Rol</h3>
+                    <p>Perfiles personalizados para Administradores, Jefes de Área, Profesores, Alumnos y más.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>Jerarquía de Personal</h3>
+                    <p>Organiza tu equipo con una estructura de mando clara y permisos definidos.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>Reservas de Escenarios</h3>
+                    <p>Gestiona la disponibilidad de tus espacios, subdivide escenarios y evita conflictos de horario.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>Asistente con IA</h3>
+                    <p>Interactúa con la plataforma usando lenguaje natural para una gestión más rápida y eficiente.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="planes">
+            <h2>Nuestros Planes</h2>
+            <div class="pricing-grid">
+                <div class="plan-card">
+                    <h3>Plan Básico</h3>
+                    <p class="price">Gratis</p>
+                    <p>Prueba de 60 días</p>
+                    <ul>
+                        <li>Todas las funcionalidades clave</li>
+                        <li>Hasta 50 usuarios</li>
+                        <li>Soporte por correo</li>
+                    </ul>
+                    <a href="register.html" class="plan-button">Empezar Prueba</a>
+                </div>
+                <div class="plan-card">
+                    <h3>Plan Pro</h3>
+                    <p class="price">$100 / mes</p>
+                    <p>o $1000 / año (2 meses gratis)</p>
+                    <ul>
+                        <li>Todas las funcionalidades clave</li>
+                        <li>Usuarios ilimitados</li>
+                        <li>Soporte prioritario</li>
+                    </ul>
+                    <a href="register.html" class="plan-button">Suscribirse</a>
+                </div>
+            </div>
+        </section>
+
+        <section id="registro">
+            <h2>¿Listo para Empezar?</h2>
+            <a href="register.html" class="cta-button">Crea tu Cuenta Gratis por 60 Días</a>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2025 Gestión-App. Todos los derechos reservados.</p>
+    </footer>
+
+    <!-- AI Sales Agent Widget -->
+    <div id="ai-agent-widget">
+        <button id="ai-agent-toggle">🤖</button>
+        <div id="ai-agent-chatbox" class="hidden">
+            <div id="chatbox-header">
+                Asistente de Ventas
+            </div>
+            <div id="chatbox-messages">
+                <!-- Messages will be appended here -->
+            </div>
+            <div id="chatbox-input-container">
+                <input type="text" id="chatbox-input" placeholder="Pregunta algo...">
+                <button id="chatbox-send">Enviar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/main.js"></script>
+</body>
+</html>
