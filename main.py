@@ -401,6 +401,18 @@ if __name__ == "__main__":
                                (tenant_id, escenario_id, 'Cancha Principal'))
                 print("Escenario de prueba creado.")
 
+            # 5. Add gamification actions
+            gamificacion_acciones = [
+                ('INICIO_SESION_DIARIO', 5),
+                ('ASISTENCIA_CLASE', 20),
+                ('TAREA_ENTREGADA', 75),
+                ('EXAMEN_SUPERADO', 300)
+            ]
+            for accion, puntos in gamificacion_acciones:
+                cursor.execute("INSERT OR IGNORE INTO gamificacion_acciones (inquilino_id, accion_key, puntos) VALUES (?, ?, ?)",
+                               (tenant_id, accion, puntos))
+            print("Acciones de gamificación de prueba creadas.")
+
             conn.commit()
 
         except Exception as e:

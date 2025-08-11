@@ -1,7 +1,8 @@
 import flet as ft
 import sqlite3
 from utils.audit_logger import log_action
-from utils.i18n_service import Translator # Keep for type hinting if needed
+from utils.i18n_service import Translator
+from gamification.engine import process_gamified_action
 
 # Dummy hash function for now. In a real app, use something like bcrypt.
 def hash_password(password):
@@ -37,6 +38,11 @@ def login_view(page: ft.Page, google_provider, microsoft_provider):
                 tenant_id=tenant_id, actor_user_id=user_id,
                 action="INICIO_SESION_EXITOSO", details={"usuario": user_name, "metodo": "password"}
             )
+
+            # If the user is a student, log the gamified action
+            if user_role == 'alumno':
+                # This should be run in a separate thread to not slow down login
+                process_gamified_action(tenant_id, user_id, 'INICIO_SESION_DIARIO')
 
             if user_role == 'admin_general': page.go("/ccos/home")
             elif user_role == 'admin_empresa': page.go("/admin_home")

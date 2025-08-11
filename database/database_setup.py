@@ -329,7 +329,65 @@ def setup_database():
         FOREIGN KEY (usuario_id_actor) REFERENCES usuarios(id)
     );
     """)
+
+    # --- 7. Tablas de Gamificación (SIGA) ---
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS gamificacion_acciones (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        inquilino_id INTEGER NOT NULL,
+        accion_key TEXT NOT NULL, -- e.g., 'ASISTENCIA_CLASE'
+        puntos INTEGER NOT NULL,
+        UNIQUE(inquilino_id, accion_key)
+    );
     """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS gamificacion_puntos_log (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        inquilino_id INTEGER NOT NULL,
+        alumno_id INTEGER NOT NULL,
+        accion_key TEXT NOT NULL,
+        puntos_ganados INTEGER NOT NULL,
+        timestamp TEXT NOT NULL,
+        FOREIGN KEY (inquilino_id) REFERENCES inquilinos(id),
+        FOREIGN KEY (alumno_id) REFERENCES alumnos(id)
+    );
+    """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS gamificacion_medallas (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        inquilino_id INTEGER NOT NULL,
+        medalla_key TEXT NOT NULL, -- e.g., 'COMPROMISO_TOTAL'
+        nombre TEXT NOT NULL,
+        descripcion TEXT,
+        icono_path TEXT,
+        UNIQUE(inquilino_id, medalla_key)
+    );
+    """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS gamificacion_medallas_obtenidas (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        inquilino_id INTEGER NOT NULL,
+        alumno_id INTEGER NOT NULL,
+        medalla_key TEXT NOT NULL,
+        fecha_obtencion TEXT NOT NULL,
+        FOREIGN KEY (inquilino_id) REFERENCES inquilinos(id),
+        FOREIGN KEY (alumno_id) REFERENCES alumnos(id)
+    );
+    """)
+
+    # Add columns to alumnos table using ALTER TABLE for safety
+    try:
+        cursor.execute("ALTER TABLE alumnos ADD COLUMN puntos_totales INTEGER DEFAULT 0")
+    except sqlite3.OperationalError:
+        pass # Column already exists
+    try:
+        cursor.execute("ALTER TABLE alumnos ADD COLUMN nivel INTEGER DEFAULT 1")
+    except sqlite3.OperationalError:
+        pass # Column already exists
+
 
     conn.commit()
     conn.close()

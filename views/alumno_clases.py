@@ -2,6 +2,7 @@ import flet as ft
 import sqlite3
 from datetime import datetime
 import os
+from gamification.engine import process_gamified_action
 
 LOGO_PATH = "assets/logo.png"
 COLOR1_HEX = "#FFD700"
@@ -39,6 +40,10 @@ def alumno_clases(page: ft.Page, tenant_id: int, alumno_id: int):
             """, (tenant_id, alumno_id, clase_id, datetime.now().isoformat(), ruta_destino))
                 conn.commit()
                 conn.close()
+
+                # Log the gamified action
+                process_gamified_action(tenant_id, alumno_id, 'ASISTENCIA_CLASE')
+
                 mensaje_estado.value = "Asistencia registrada correctamente."
                 mensaje_estado.color = "green"
                 # Optionally, disable the button after successful registration
