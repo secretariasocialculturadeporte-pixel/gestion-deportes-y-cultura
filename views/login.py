@@ -42,7 +42,7 @@ def login_view(page: ft.Page, google_provider, microsoft_provider):
             # If the user is a student, log the gamified action
             if user_role == 'alumno':
                 # This should be run in a separate thread to not slow down login
-                process_gamified_action(tenant_id, user_id, 'INICIO_SESION_DIARIO')
+                process_gamified_action(tenant_id, user_id, 'INICIO_SESION_DIARIO', page.pubsub)
 
             if user_role == 'admin_general': page.go("/ccos/home")
             elif user_role == 'admin_empresa': page.go("/admin_home")

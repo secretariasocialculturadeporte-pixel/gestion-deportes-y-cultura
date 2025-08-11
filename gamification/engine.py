@@ -1,10 +1,12 @@
 import sqlite3
 from datetime import datetime
+from utils.notification_service import create_notification
 
 class GamificationEngine:
-    def __init__(self, tenant_id: int, alumno_user_id: int):
+    def __init__(self, tenant_id: int, alumno_user_id: int, pubsub_instance):
         self.tenant_id = tenant_id
         self.alumno_user_id = alumno_user_id
+        self.pubsub_instance = pubsub_instance
         # We need the alumno_id (from the alumnos table), not the usuario_id
         self.conn = sqlite3.connect("formacion.db")
         self.cursor = self.conn.cursor()
@@ -53,10 +55,41 @@ class GamificationEngine:
         print(f"Acción '{action_key}' registrada para el alumno {self.alumno_id}. Puntos ganados: {points_to_add}")
 
     def _check_for_new_medals(self):
-        """Placeholder for medal-granting logic."""
-        # Example: Check for "Asistencia Perfecta"
-        # This would require more complex queries.
-        pass
+        """Checks if the user has earned any new medals and grants them."""
+        # --- Example: Medal for First 5 Attendances ---
+        MEDAL_KEY = "PRIMEROS_5_PASOS"
+
+        # 1. Check if user already has this medal
+        self.cursor.execute(
+            "SELECT id FROM gamificacion_medallas_obtenidas WHERE alumno_id = ? AND medalla_key = ?",
+            (self.alumno_id, MEDAL_KEY)
+        )
+        if self.cursor.fetchone():
+            return # Already has it
+
+        # 2. Check if the condition is met
+        self.cursor.execute(
+            "SELECT COUNT(*) FROM gamificacion_puntos_log WHERE alumno_id = ? AND accion_key = 'ASISTENCIA_CLASE'",
+            (self.alumno_id,)
+        )
+        attendance_count = self.cursor.fetchone()[0]
+
+        if attendance_count >= 5:
+            # 3. Grant the medal
+            self.cursor.execute(
+                "INSERT INTO gamificacion_medallas_obtenidas (inquilino_id, alumno_id, medalla_key, fecha_obtencion) VALUES (?, ?, ?, ?)",
+                (self.tenant_id, self.alumno_id, MEDAL_KEY, datetime.now().isoformat())
+            )
+            print(f"MEDAL GRANTED: User {self.alumno_id} earned medal {MEDAL_KEY}")
+
+            # 4. Send notification
+            create_notification(
+                tenant_id=self.tenant_id,
+                user_id=self.alumno_user_id,
+                message="¡Felicidades! Has ganado la medalla 'Primeros 5 Pasos' por tu constancia.",
+                pubsub_instance=self.pubsub_instance
+            )
+
 
     def _check_for_level_up(self):
         """Placeholder for level-up logic."""
@@ -69,6 +102,6 @@ class GamificationEngine:
             self.conn.close()
 
 # Main function to be called from the app
-def process_gamified_action(tenant_id: int, user_id: int, action_key: str):
-    engine = GamificationEngine(tenant_id, user_id)
+def process_gamified_action(tenant_id: int, user_id: int, action_key: str, pubsub_instance):
+    engine = GamificationEngine(tenant_id, user_id, pubsub_instance)
     engine.log_action(action_key)

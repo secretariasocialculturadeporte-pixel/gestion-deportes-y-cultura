@@ -25,6 +25,7 @@ from views.admin_empresa.gestion_personal import gestion_personal_view
 from views.jefe_area.jefe_area_principal import jefe_area_principal_view
 from views.jefe_area.gestion_equipo import gestion_equipo_view
 from views.jefe_area.analisis_datos import analisis_datos_view
+from views.alumno.mi_progreso import mi_progreso_view
 from views.admin_empresa.gestion_areas import gestion_areas_view
 from views.admin_empresa.audit_log_view import audit_log_view
 from views.jefe_escenarios.jefe_escenarios_principal import jefe_escenarios_principal_view
@@ -196,6 +197,10 @@ def main(page: ft.Page):
 
             elif page.route == '/almacenista/elementos':
                 if user_role == 'almacenista': add_view(almacenista_gestion_elementos, tenant_id, user_id)
+                else: page.go('/')
+
+            elif page.route == '/alumno/progreso':
+                if user_role == 'alumno': add_view(mi_progreso_view, tenant_id, user_id)
                 else: page.go('/')
 
             elif page.route == '/admin_home':
@@ -412,6 +417,17 @@ if __name__ == "__main__":
                 cursor.execute("INSERT OR IGNORE INTO gamificacion_acciones (inquilino_id, accion_key, puntos) VALUES (?, ?, ?)",
                                (tenant_id, accion, puntos))
             print("Acciones de gamificación de prueba creadas.")
+
+            # 6. Add gamification medals
+            medallas = [
+                ('PRIMEROS_5_PASOS', 'Primeros 5 Pasos', 'Asististe a 5 clases. ¡Sigue así!', 'assets/icons/medals/placeholder_medal.png'),
+                ('COMPROMISO_TOTAL', 'Compromiso Total', 'Un mes de asistencia perfecta.', 'assets/icons/medals/placeholder_medal.png'),
+                ('MADRUGADOR', 'Madrugador', 'Iniciaste sesión 5 días seguidos antes de las 8 AM.', 'assets/icons/medals/placeholder_medal.png')
+            ]
+            for key, nombre, desc, icon in medallas:
+                cursor.execute("INSERT OR IGNORE INTO gamificacion_medallas (inquilino_id, medalla_key, nombre, descripcion, icono_path) VALUES (?, ?, ?, ?, ?)",
+                               (tenant_id, key, nombre, desc, icon))
+            print("Medallas de gamificación de prueba creadas.")
 
             conn.commit()
 

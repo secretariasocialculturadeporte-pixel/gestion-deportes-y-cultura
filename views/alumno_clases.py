@@ -42,7 +42,7 @@ def alumno_clases(page: ft.Page, tenant_id: int, alumno_id: int):
                 conn.close()
 
                 # Log the gamified action
-                process_gamified_action(tenant_id, alumno_id, 'ASISTENCIA_CLASE')
+                process_gamified_action(tenant_id, alumno_id, 'ASISTENCIA_CLASE', page.pubsub)
 
                 mensaje_estado.value = "Asistencia registrada correctamente."
                 mensaje_estado.color = "green"
@@ -138,7 +138,14 @@ def alumno_clases(page: ft.Page, tenant_id: int, alumno_id: int):
             gradient=ft.LinearGradient(colors=[COLOR2_HEX, COLOR1_HEX]),
             expand=True,
             content=ft.Column([
-                ft.Image(src=LOGO_PATH, width=140, height=70),
+                ft.Row([
+                    ft.Image(src=LOGO_PATH, width=140, height=70),
+                    ft.ElevatedButton(
+                        "Ver Mi Progreso (SIGA)",
+                        icon=ft.icons.STAR,
+                        on_click=lambda _: page.go("/alumno/progreso")
+                    )
+                ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
                 mensaje_estado,
                 ft.Text("Notificaciones", size=20, weight="bold"),
                 ft.Container(content=notificaciones_column, height=150),
