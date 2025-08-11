@@ -1,7 +1,8 @@
 import flet as ft
 import sqlite3
-from views.login import hash_password # Re-using the dummy hash function
+from views.login import hash_password
 from utils.audit_logger import log_action
+from utils.notification_service import create_notification
 
 LOGO_PATH = "../assets/logo.png"
 COLOR1_HEX = "#FFD700"
@@ -57,6 +58,14 @@ def gestion_personal_view(page: ft.Page, tenant_id: int, actor_user_id: int):
                     actor_user_id=actor_user_id,
                     action="CREAR_USUARIO",
                     details={"usuario_creado_id": new_user_id, "rol_asignado": rol_a_crear, "nombre": nombre_completo_input.value}
+                )
+
+                # Send a welcome notification
+                create_notification(
+                    tenant_id=tenant_id,
+                    user_id=new_user_id,
+                    message=f"¡Bienvenido a la plataforma! Has sido registrado con el rol de {rol_a_crear.replace('_', ' ')}.",
+                    pubsub_instance=page.pubsub
                 )
 
                 page.snack_bar = ft.SnackBar(ft.Text(f"Usuario '{nombre_completo_input.value}' creado con éxito."), bgcolor="green")

@@ -33,6 +33,7 @@ from views.jefe_escenarios.gestion_reservas import gestion_reservas_view
 from views.admin_empresa.configuracion_ia import configuracion_ia_view
 from views.super_admin.ccos_main import ccos_main_view
 from views.splash import splash_view
+from views.components.notification_bell import NotificationBell
 from views.forgot_password import forgot_password_view
 from views.reset_password import reset_password_view
 

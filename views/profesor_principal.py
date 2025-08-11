@@ -2,6 +2,7 @@ import flet as ft
 import pandas as pd
 import sqlite3
 from datetime import datetime
+from views.components.notification_bell import NotificationBell
 
 LOGO_PATH = "assets/logo.png"
 COLOR1_HEX = "#FFD700"
@@ -39,8 +40,15 @@ def profesor_principal(page: ft.Page, tenant_id: int, profesor_id: int):
         page.snack_bar.open = True
         page.update()
 
+    # Create an instance of the notification bell
+    notification_bell = NotificationBell(page, tenant_id, profesor_id)
+
     return ft.View("/profesor_home", [
-        ft.AppBar(title=ft.Text("Panel Principal del Profesor"), bgcolor=COLOR1_HEX),
+        ft.AppBar(
+            title=ft.Text("Panel Principal del Profesor"),
+            bgcolor=COLOR1_HEX,
+            actions=[notification_bell]
+        ),
         ft.Container(
             padding=20,
             gradient=ft.LinearGradient(

@@ -1,6 +1,7 @@
 import flet as ft
 import sqlite3
 from datetime import datetime
+from utils.notification_service import create_notification
 
 LOGO_PATH = "../../assets/logo.png"
 COLOR1_HEX = "#FFD700"
@@ -81,14 +82,24 @@ class GestionReservasView:
 
         # --- Save Logic ---
         try:
+            usuario_reserva_id = int(self.usuario_reserva_dropdown.value)
             cursor.execute("""
                 INSERT INTO reservas (inquilino_id, escenario_parte_id, usuario_id_reserva, proposito, fecha_inicio, fecha_fin)
                 VALUES (?, ?, ?, ?, ?, ?)
             """, (
-                self.tenant_id, self.escenario_parte_id, int(self.usuario_reserva_dropdown.value),
+                self.tenant_id, self.escenario_parte_id, usuario_reserva_id,
                 self.proposito_input.value, self.fecha_inicio_input.value, self.fecha_fin_input.value
             ))
             conn.commit()
+
+            # Send notification to the user for whom the reservation was made
+            create_notification(
+                tenant_id=self.tenant_id,
+                user_id=usuario_reserva_id,
+                message=f"Se ha creado una nueva reserva a tu nombre para el {self.fecha_inicio_input.value}.",
+                pubsub_instance=self.page.pubsub
+            )
+
             self.page.snack_bar = ft.SnackBar(ft.Text("Reserva creada con éxito."), bgcolor="green")
             self.cargar_datos_iniciales() # Refresh list
         except Exception as ex:
