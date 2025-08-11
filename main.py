@@ -34,13 +34,21 @@ from views.admin_empresa.configuracion_ia import configuracion_ia_view
 from views.super_admin.ccos_main import ccos_main_view
 from views.splash import splash_view
 from views.components.notification_bell import NotificationBell
+from views.components.language_selector import LanguageSelector
 from views.forgot_password import forgot_password_view
 from views.reset_password import reset_password_view
+from utils.i18n_service import Translator
 
 import os
 
 def main(page: ft.Page):
     page.title = "Sistema de Gestión de Formación"
+
+    # --- Internationalization Service ---
+    # Check session for a saved language, default to 'es'
+    user_lang = page.session.get("user_lang") or "es"
+    translator = Translator(initial_lang=user_lang)
+    page.translator = translator # Attach to page object for easy access
 
     # --- OAuth Providers Configuration ---
     # The user must replace these with their own credentials from Google/Microsoft Developer Consoles.
@@ -133,152 +141,121 @@ def main(page: ft.Page):
 
         else:
             # --- Role-based routing for authenticated users ---
+
+            # Create a language selector for all authenticated views
+            lang_selector = LanguageSelector(page, page.translator)
+
             if page.route == '/profesor_home':
                 if user_role == 'profesor':
-                    page.views.append(profesor_principal(page))
+                    view = profesor_principal(page, tenant_id, user_id)
+                    view.appbar.actions.append(lang_selector)
+                    page.views.append(view)
                 else:
                     page.go('/') # Or an access denied view
 
-            elif page.route == '/profesor_perfil':
-                if user_role == 'profesor':
-                    page.views.append(profesor_perfil(page, user_id, tenant_id))
-                else:
-                    page.go('/')
+            # This function simplifies adding the view and the language selector
+            def add_view(view_function, *args):
+                view = view_function(page, *args)
+                if view.appbar and not isinstance(view.appbar, str): # Ensure appbar exists and is an object
+                    if not hasattr(view.appbar, 'actions'):
+                        view.appbar.actions = []
+                    view.appbar.actions.append(lang_selector)
+                page.views.append(view)
+
+            if page.route == '/profesor_perfil':
+                if user_role == 'profesor': add_view(profesor_perfil, user_id, tenant_id)
+                else: page.go('/')
 
             elif page.route == '/profesor_clases':
-                 if user_role == 'profesor':
-                    # This view needs the professor's own ID from the 'profesores' table
-                    # This logic should be improved later, but for now we pass the user_id
-                    page.views.append(profesor_clases(page, tenant_id, user_id))
-                 else:
-                    page.go('/')
+                 if user_role == 'profesor': add_view(profesor_clases, tenant_id, user_id)
+                 else: page.go('/')
 
             elif page.route == '/profesor_escenarios':
-                 if user_role == 'profesor':
-                    page.views.append(profesor_escenarios(page, tenant_id))
-                 else:
-                    page.go('/')
+                 if user_role == 'profesor': add_view(profesor_escenarios, tenant_id)
+                 else: page.go('/')
 
             elif page.route == '/profesor_eventos':
-                 if user_role == 'profesor':
-                    page.views.append(profesor_eventos(page, tenant_id, user_id))
-                 else:
-                    page.go('/')
+                 if user_role == 'profesor': add_view(profesor_eventos, tenant_id, user_id)
+                 else: page.go('/')
 
             elif page.route == '/profesor_horarios':
-                 if user_role == 'profesor':
-                    page.views.append(profesor_horarios(page, tenant_id))
-                 else:
-                    page.go('/')
+                 if user_role == 'profesor': add_view(profesor_horarios, tenant_id)
+                 else: page.go('/')
 
             elif page.route == '/profesor_procesos_formacion':
-                 if user_role == 'profesor':
-                    page.views.append(profesor_procesos_formacion(page, tenant_id))
-                 else:
-                    page.go('/')
+                 if user_role == 'profesor': add_view(profesor_procesos_formacion, tenant_id)
+                 else: page.go('/')
 
             elif page.route == '/instructor/elementos':
-                 if user_role == 'profesor':
-                    page.views.append(instructor_gestion_elementos(page, tenant_id, user_id))
-                 else:
-                    page.go('/')
+                 if user_role == 'profesor': add_view(instructor_gestion_elementos, tenant_id, user_id)
+                 else: page.go('/')
 
             elif page.route == '/alumno_clases':
-                if user_role == 'alumno':
-                    page.views.append(alumno_clases(page, tenant_id, user_id))
-                else:
-                    page.go('/')
+                if user_role == 'alumno': add_view(alumno_clases, tenant_id, user_id)
+                else: page.go('/')
 
             elif page.route == '/almacenista/elementos':
-                if user_role == 'almacenista':
-                    page.views.append(almacenista_gestion_elementos(page, tenant_id, user_id))
-                else:
-                    page.go('/')
+                if user_role == 'almacenista': add_view(almacenista_gestion_elementos, tenant_id, user_id)
+                else: page.go('/')
 
             elif page.route == '/admin_home':
-                if user_role == 'admin_empresa':
-                    page.views.append(admin_principal(page, tenant_id))
-                else:
-                    page.go('/')
+                if user_role == 'admin_empresa': add_view(admin_principal, tenant_id)
+                else: page.go('/')
 
             elif page.route == '/admin/reporte_demografico':
-                if user_role == 'admin_empresa':
-                    page.views.append(admin_reporte_demografico(page, tenant_id))
-                else:
-                    page.go('/')
+                if user_role == 'admin_empresa': add_view(admin_reporte_demografico, tenant_id)
+                else: page.go('/')
 
             elif page.route == '/admin/reporte_asistencia':
-                if user_role == 'admin_empresa':
-                    page.views.append(admin_reporte_asistencia(page, tenant_id))
-                else:
-                    page.go('/')
+                if user_role == 'admin_empresa': add_view(admin_reporte_asistencia, tenant_id)
+                else: page.go('/')
 
             elif page.route == '/admin/gestion_listas':
-                if user_role == 'admin_empresa':
-                    page.views.append(admin_gestion_listas(page, tenant_id))
-                else:
-                    page.go('/')
+                if user_role == 'admin_empresa': add_view(admin_gestion_listas, tenant_id)
+                else: page.go('/')
 
             elif page.route == '/admin/personal':
-                if user_role == 'admin_empresa':
-                    page.views.append(gestion_personal_view(page, tenant_id, user_id))
-                else:
-                    page.go('/')
+                if user_role == 'admin_empresa': add_view(gestion_personal_view, tenant_id, user_id)
+                else: page.go('/')
 
             elif page.route == '/admin/areas':
-                if user_role == 'admin_empresa':
-                    page.views.append(gestion_areas_view(page, tenant_id))
-                else:
-                    page.go('/')
+                if user_role == 'admin_empresa': add_view(gestion_areas_view, tenant_id)
+                else: page.go('/')
 
             elif page.route == '/admin/configuracion_ia':
-                if user_role == 'admin_empresa':
-                    page.views.append(configuracion_ia_view(page, tenant_id))
-                else:
-                    page.go('/')
+                if user_role == 'admin_empresa': add_view(configuracion_ia_view, tenant_id)
+                else: page.go('/')
 
             elif page.route == '/admin/audit_log':
-                if user_role == 'admin_empresa':
-                    page.views.append(audit_log_view(page, tenant_id))
-                else:
-                    page.go('/')
+                if user_role == 'admin_empresa': add_view(audit_log_view, tenant_id)
+                else: page.go('/')
 
             elif page.route == '/jefe_area/home':
-                if user_role == 'jefe_area':
-                    page.views.append(jefe_area_principal_view(page))
-                else:
-                    page.go('/')
+                if user_role == 'jefe_area': add_view(jefe_area_principal_view)
+                else: page.go('/')
 
             elif page.route == '/jefe_area/equipo':
-                if user_role == 'jefe_area':
-                    page.views.append(gestion_equipo_view(page, tenant_id, user_id))
-                else:
-                    page.go('/')
+                if user_role == 'jefe_area': add_view(gestion_equipo_view, tenant_id, user_id)
+                else: page.go('/')
 
             elif page.route == '/jefe_area/analisis':
-                if user_role == 'jefe_area':
-                    page.views.append(analisis_datos_view(page, tenant_id, user_id))
-                else:
-                    page.go('/')
+                if user_role == 'jefe_area': add_view(analisis_datos_view, tenant_id, user_id)
+                else: page.go('/')
 
             elif page.route == '/jefe_escenarios/home':
-                if user_role == 'jefe_escenarios':
-                    page.views.append(jefe_escenarios_principal_view(page))
-                else:
-                    page.go('/')
+                if user_role == 'jefe_escenarios': add_view(jefe_escenarios_principal_view)
+                else: page.go('/')
 
             elif page.route == '/jefe_escenarios/gestion':
-                if user_role == 'jefe_escenarios':
-                    page.views.append(gestion_escenarios_avanzado_view(page, tenant_id, user_id))
-                else:
-                    page.go('/')
+                if user_role == 'jefe_escenarios': add_view(gestion_escenarios_avanzado_view, tenant_id, user_id)
+                else: page.go('/')
 
             # Dynamic route for reservations
             elif page.route.startswith('/jefe_escenarios/reservas/'):
                 if user_role == 'jefe_escenarios':
                     try:
                         parte_id = int(page.route.split('/')[-1])
-                        page.views.append(gestion_reservas_view(page, tenant_id, parte_id))
+                        add_view(gestion_reservas_view, tenant_id, parte_id)
                     except (ValueError, IndexError):
                         page.go('/jefe_escenarios/home') # Go home if ID is invalid
                 else:
