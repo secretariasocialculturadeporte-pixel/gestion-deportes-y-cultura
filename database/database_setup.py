@@ -483,6 +483,40 @@ def setup_database():
     );
     """)
 
+    # --- 10. Tablas para Chat y Mensajería ---
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS chat_conversaciones (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        inquilino_id INTEGER NOT NULL,
+        fecha_creacion TEXT NOT NULL,
+        ultimo_mensaje_timestamp TEXT,
+        FOREIGN KEY (inquilino_id) REFERENCES inquilinos(id)
+    );
+    """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS chat_participantes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        conversacion_id INTEGER NOT NULL,
+        usuario_id INTEGER NOT NULL,
+        FOREIGN KEY (conversacion_id) REFERENCES chat_conversaciones(id),
+        FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+    );
+    """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS chat_mensajes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        conversacion_id INTEGER NOT NULL,
+        remitente_usuario_id INTEGER NOT NULL,
+        contenido TEXT NOT NULL,
+        timestamp TEXT NOT NULL,
+        leido INTEGER DEFAULT 0,
+        FOREIGN KEY (conversacion_id) REFERENCES chat_conversaciones(id),
+        FOREIGN KEY (remitente_usuario_id) REFERENCES usuarios(id)
+    );
+    """)
+
     # Add columns to alumnos table using ALTER TABLE for safety
     try:
         cursor.execute("ALTER TABLE alumnos ADD COLUMN puntos_totales INTEGER DEFAULT 0")

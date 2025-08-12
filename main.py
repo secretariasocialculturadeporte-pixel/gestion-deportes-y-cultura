@@ -42,6 +42,8 @@ from views.super_admin.ccos_main import ccos_main_view
 from views.splash import splash_view
 from views.components.notification_bell import NotificationBell
 from views.components.language_selector import LanguageSelector
+from views.components.message_icon import MessageIcon
+from views.shared.mensajeria_view import mensajeria_view
 from views.forgot_password import forgot_password_view
 from views.reset_password import reset_password_view
 from utils.i18n_service import Translator
@@ -147,6 +149,29 @@ def main(page: ft.Page):
             page.go("/login")
 
         else:
+            # --- PubSub Handler for Chat ---
+            def on_chat_message(message):
+                # This is a simple global handler. A more sophisticated implementation
+                # would check if the user is in the chat view and update it directly.
+                try:
+                    import json
+                    data = json.loads(message.data)
+                    if data.get("type") == "new_message":
+                        # Avoid showing notification if user is already on the messages page
+                        if not page.route.startswith("/mensajes"):
+                            page.snack_bar = ft.SnackBar(
+                                content=ft.Text(f"Nuevo mensaje de {data.get('remitente_nombre', 'alguien')}: {data.get('contenido', '')[:30]}..."),
+                                action="Ver",
+                                on_action=lambda _, conv_id=data.get('conversacion_id'): page.go(f"/mensajes/{conv_id}")
+                            )
+                            page.snack_bar.open = True
+                            page.update()
+                except Exception as e:
+                    print(f"Error processing pubsub message: {e}")
+
+            # Subscribe user to their chat topic
+            page.pubsub.subscribe_on_topic(f"chat_{user_id}", on_chat_message)
+
             # --- Subscription Check ---
             # Check the tenant's subscription status before allowing access to any protected route.
             conn = sqlite3.connect("formacion.db")
@@ -175,22 +200,31 @@ def main(page: ft.Page):
             # Create a language selector for all authenticated views
             lang_selector = LanguageSelector(page, page.translator)
 
-            if page.route == '/profesor_home':
-                if user_role == 'profesor':
-                    view = profesor_principal(page, tenant_id, user_id)
-                    view.appbar.actions.append(lang_selector)
-                    page.views.append(view)
-                else:
-                    page.go('/') # Or an access denied view
-
-            # This function simplifies adding the view and the language selector
-            def add_view(view_function, *args):
-                view = view_function(page, *args)
+            # This function simplifies adding the view and common AppBar items
+            def add_view(view_function, *args, **kwargs):
+                view = view_function(page, *args, **kwargs)
                 if view.appbar and not isinstance(view.appbar, str): # Ensure appbar exists and is an object
                     if not hasattr(view.appbar, 'actions'):
                         view.appbar.actions = []
-                    view.appbar.actions.append(lang_selector)
+
+                    # Prepend icons so they appear on the left of any specific view actions
+                    # Note: The NotificationBell was previously added manually in some views.
+                    # This standardizes it. We should remove the manual additions later if needed.
+                    existing_actions = view.appbar.actions[:]
+                    view.appbar.actions = [
+                        MessageIcon(page),
+                        NotificationBell(page, tenant_id, user_id),
+                    ] + existing_actions
+
+                    # Ensure language selector is at the very end
+                    if lang_selector not in view.appbar.actions:
+                         view.appbar.actions.append(lang_selector)
+
                 page.views.append(view)
+
+            if page.route == '/profesor_home':
+                if user_role == 'profesor': add_view(profesor_principal, tenant_id, user_id)
+                else: page.go('/')
 
             if page.route == '/profesor_perfil':
                 if user_role == 'profesor': add_view(profesor_perfil, user_id, tenant_id)
@@ -231,6 +265,17 @@ def main(page: ft.Page):
             elif page.route == '/seguimiento_progreso':
                 if user_role == 'profesor': add_view(seguimiento_progreso_view, user_id)
                 else: page.go('/')
+
+            elif page.route.startswith("/mensajes"):
+                try:
+                    parts = page.route.split("/")
+                    if len(parts) == 3 and parts[2]: # /mensajes/<id>
+                        conv_id = int(parts[2])
+                        add_view(mensajeria_view, user_id, tenant_id, conversation_id_to_open=conv_id)
+                    else: # /mensajes
+                        add_view(mensajeria_view, user_id, tenant_id)
+                except (ValueError, IndexError):
+                    page.go("/mensajes")
 
             elif page.route == '/alumno_clases':
                 if user_role == 'alumno': add_view(alumno_clases, tenant_id, user_id)
