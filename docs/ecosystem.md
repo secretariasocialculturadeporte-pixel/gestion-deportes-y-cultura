@@ -1,10 +1,10 @@
-# Arquitectura y Ecosistema del SGA
+# Arquitectura y Ecosistema del SGA-CD
 
-Este documento describe la arquitectura técnica y los componentes modulares que conforman el Sistema de Gestión Académica (SGA).
+Este documento describe la arquitectura técnica y los componentes modulares que conforman el Sistema de Gestión Académica para formación cultural y deportivo (SGA-CD).
 
 ## Arquitectura General
 
-El SGA está construido sobre una arquitectura modular que separa las diferentes preocupaciones de la aplicación.
+El SGA-CD está construido sobre una arquitectura modular que separa las diferentes preocupaciones de la aplicación.
 
 *   **Aplicación Principal (Flet):** El corazón de la plataforma es una aplicación de escritorio y web construida con el framework Flet. Orquesta toda la interfaz de usuario para los usuarios autenticados.
 *   **Base de Datos (SQLite):** Una única base de datos SQLite (`formacion.db`) actúa como la fuente central de verdad para toda la aplicación, asegurando la consistencia de los datos. El esquema está diseñado para ser multi-inquilino, con un `inquilino_id` que aísla los datos de cada organización cliente.

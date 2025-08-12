@@ -76,6 +76,27 @@ def profesor_principal(page: ft.Page, tenant_id: int, profesor_id: int):
                     subtitle=ft.Text("Crear y gestionar tus clases"),
                     on_click=lambda _: page.go("/profesor_clases")
                 ),
+                ft.Divider(),
+                ft.Text("Planificación y Seguimiento", weight="bold"),
+                ft.ListTile(
+                    leading=ft.Icon(ft.icons.LIST_ALT),
+                    title=ft.Text("Definir Currículo"),
+                    subtitle=ft.Text("Crear y organizar los temas de tus planes de estudio"),
+                    on_click=lambda _: page.go("/definir_curriculo")
+                ),
+                ft.ListTile(
+                    leading=ft.Icon(ft.icons.CALENDAR_MONTH),
+                    title=ft.Text("Planificador de Clases"),
+                    subtitle=ft.Text("Asignar temas a fechas específicas en el calendario"),
+                    on_click=lambda _: page.go("/planificador_calendario")
+                ),
+                ft.ListTile(
+                    leading=ft.Icon(ft.icons.GROUP),
+                    title=ft.Text("Seguimiento de Alumnos"),
+                    subtitle=ft.Text("Ver y actualizar el progreso individual de los alumnos"),
+                    on_click=lambda _: page.go("/seguimiento_progreso")
+                ),
+                ft.Divider(),
                 ft.ListTile(
                     title=ft.Text("📊 Descargar Reporte de Asistencia"),
                     subtitle=ft.Text("Exportar un listado de todas tus asistencias a Excel"),

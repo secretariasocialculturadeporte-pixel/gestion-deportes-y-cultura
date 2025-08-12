@@ -1,6 +1,6 @@
-# Manual de Usuario - Sistema de Gestión Académica
+# Manual de Usuario - Sistema de Gestión Académica para formación cultural y deportivo
 
-Bienvenido al Manual de Usuario del SGA. Esta guía le ayudará a navegar por las diferentes funcionalidades de la plataforma según su rol.
+Bienvenido al Manual de Usuario del SGA-CD. Esta guía le ayudará a navegar por las diferentes funcionalidades de la plataforma según su rol.
 
 ---
 

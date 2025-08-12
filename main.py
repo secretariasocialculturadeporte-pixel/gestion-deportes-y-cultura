@@ -11,6 +11,9 @@ from views.profesor_eventos import profesor_eventos
 from views.profesor_horarios import profesor_horarios
 from views.profesor_procesos_formacion import profesor_procesos_formacion
 from views.instructor_gestion_elementos import instructor_gestion_elementos
+from views.profesor.definir_curriculo import definir_curriculo_view
+from views.profesor.planificador_calendario import planificador_calendario_view
+from views.profesor.seguimiento_progreso import seguimiento_progreso_view
 
 from views.alumno_clases import alumno_clases
 from views.alumno_inscripcion import alumno_inscripcion
@@ -45,7 +48,7 @@ from utils.i18n_service import Translator
 import os
 
 def main(page: ft.Page):
-    page.title = "Sistema de Gestión de Formación"
+    page.title = "SGA-CD: Sistema de Gestión Académica"
 
     # --- Internationalization Service ---
     # Check session for a saved language, default to 'es'
@@ -192,6 +195,18 @@ def main(page: ft.Page):
             elif page.route == '/instructor/elementos':
                  if user_role == 'profesor': add_view(instructor_gestion_elementos, tenant_id, user_id)
                  else: page.go('/')
+
+            elif page.route == '/definir_curriculo':
+                if user_role == 'profesor': add_view(definir_curriculo_view, user_id)
+                else: page.go('/')
+
+            elif page.route == '/planificador_calendario':
+                if user_role == 'profesor': add_view(planificador_calendario_view, user_id)
+                else: page.go('/')
+
+            elif page.route == '/seguimiento_progreso':
+                if user_role == 'profesor': add_view(seguimiento_progreso_view, user_id)
+                else: page.go('/')
 
             elif page.route == '/alumno_clases':
                 if user_role == 'alumno': add_view(alumno_clases, tenant_id, user_id)

@@ -396,6 +396,62 @@ def setup_database():
     );
     """)
 
+    # --- 8. Tablas para Planificación Curricular ---
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS plan_curricular (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        inquilino_id INTEGER NOT NULL,
+        nombre_plan TEXT NOT NULL,
+        descripcion TEXT,
+        creado_por_usuario_id INTEGER NOT NULL,
+        proceso_id INTEGER,
+        area TEXT NOT NULL CHECK(area IN ('Cultura', 'Deportes')),
+        FOREIGN KEY (inquilino_id) REFERENCES inquilinos(id),
+        FOREIGN KEY (creado_por_usuario_id) REFERENCES usuarios(id),
+        FOREIGN KEY (proceso_id) REFERENCES procesos_formacion(id)
+    );
+    """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS plan_curricular_temas (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        plan_curricular_id INTEGER NOT NULL,
+        nombre_tema TEXT NOT NULL,
+        descripcion_tema TEXT,
+        orden INTEGER NOT NULL,
+        FOREIGN KEY (plan_curricular_id) REFERENCES plan_curricular(id)
+    );
+    """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS planificador_clases_eventos (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        tema_id INTEGER NOT NULL,
+        instructor_id INTEGER NOT NULL,
+        clase_id INTEGER,
+        fecha_programada TEXT NOT NULL,
+        estado TEXT NOT NULL CHECK(estado IN ('planificado', 'completado', 'retrasado', 'cancelado')),
+        FOREIGN KEY (tema_id) REFERENCES plan_curricular_temas(id),
+        FOREIGN KEY (instructor_id) REFERENCES usuarios(id),
+        FOREIGN KEY (clase_id) REFERENCES clases(id)
+    );
+    """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS progreso_alumno_tema (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        alumno_usuario_id INTEGER NOT NULL,
+        tema_id INTEGER NOT NULL,
+        estado TEXT NOT NULL CHECK(estado IN ('no_iniciado', 'en_progreso', 'completado', 'necesita_refuerzo')),
+        fecha_completado TEXT,
+        observaciones TEXT,
+        evaluacion TEXT,
+        UNIQUE(alumno_usuario_id, tema_id),
+        FOREIGN KEY (alumno_usuario_id) REFERENCES usuarios(id),
+        FOREIGN KEY (tema_id) REFERENCES plan_curricular_temas(id)
+    );
+    """)
+
     # Add columns to alumnos table using ALTER TABLE for safety
     try:
         cursor.execute("ALTER TABLE alumnos ADD COLUMN puntos_totales INTEGER DEFAULT 0")

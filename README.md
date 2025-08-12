@@ -1,6 +1,6 @@
-# Sistema de Gestión Académica (SGA)
+# Sistema de Gestión Académica para formación cultural y deportivo (SGA-CD)
 
-Este es un sistema de gestión académica y deportiva multifuncional, multi-inquilino, construido con Flet (Python). La plataforma está diseñada para administrar centros de formación, escuelas deportivas y otras organizaciones educativas, proporcionando un conjunto de herramientas integradas para administradores, personal y estudiantes.
+Este es un sistema de gestión académica para formación cultural y deportivo, multifuncional y multi-inquilino, construido con Flet (Python).
 
 ## Core Features
 
