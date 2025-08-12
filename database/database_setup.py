@@ -362,6 +362,7 @@ def setup_database():
         nombre TEXT NOT NULL,
         descripcion TEXT,
         icono_path TEXT,
+        es_manual INTEGER DEFAULT 0, -- 0 for automatic, 1 for manual award
         UNIQUE(inquilino_id, medalla_key)
     );
     """)
@@ -385,6 +386,10 @@ def setup_database():
         pass # Column already exists
     try:
         cursor.execute("ALTER TABLE alumnos ADD COLUMN nivel INTEGER DEFAULT 1")
+    except sqlite3.OperationalError:
+        pass # Column already exists
+    try:
+        cursor.execute("ALTER TABLE alumnos ADD COLUMN mostrar_en_rankings INTEGER DEFAULT 1") # 1 for True, 0 for False
     except sqlite3.OperationalError:
         pass # Column already exists
 

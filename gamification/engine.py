@@ -105,3 +105,38 @@ class GamificationEngine:
 def process_gamified_action(tenant_id: int, user_id: int, action_key: str, pubsub_instance):
     engine = GamificationEngine(tenant_id, user_id, pubsub_instance)
     engine.log_action(action_key)
+
+def grant_manual_badge(tenant_id: int, actor_user_id: int, target_alumno_user_id: int, medalla_key: str, pubsub_instance):
+    """Grants a medal manually and sends a notification."""
+    engine = GamificationEngine(tenant_id, target_alumno_user_id, pubsub_instance)
+    if not engine.alumno_id:
+        return {"status": "error", "message": "Alumno no encontrado."}
+
+    # 1. Check if user already has this medal
+    engine.cursor.execute(
+        "SELECT id FROM gamificacion_medallas_obtenidas WHERE alumno_id = ? AND medalla_key = ?",
+        (engine.alumno_id, medalla_key)
+    )
+    if engine.cursor.fetchone():
+        return {"status": "info", "message": "El alumno ya tiene esta medalla."}
+
+    # 2. Grant the medal
+    engine.cursor.execute(
+        "INSERT INTO gamificacion_medallas_obtenidas (inquilino_id, alumno_id, medalla_key, fecha_obtencion) VALUES (?, ?, ?, ?)",
+        (tenant_id, engine.alumno_id, medalla_key, datetime.now().isoformat())
+    )
+
+    # 3. Get medal name for notification
+    engine.cursor.execute("SELECT nombre FROM gamificacion_medallas WHERE medalla_key = ?", (medalla_key,))
+    medal_name = engine.cursor.fetchone()[0]
+
+    # 4. Send notification
+    create_notification(
+        tenant_id=tenant_id,
+        user_id=target_alumno_user_id,
+        message=f"¡Felicidades! Tu instructor te ha otorgado la medalla '{medal_name}'.",
+        pubsub_instance=pubsub_instance
+    )
+
+    engine.conn.commit()
+    return {"status": "success", "message": f"Medalla '{medal_name}' otorgada con éxito."}

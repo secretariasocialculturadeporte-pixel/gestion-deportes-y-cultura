@@ -420,13 +420,14 @@ if __name__ == "__main__":
 
             # 6. Add gamification medals
             medallas = [
-                ('PRIMEROS_5_PASOS', 'Primeros 5 Pasos', 'Asististe a 5 clases. ¡Sigue así!', 'assets/icons/medals/placeholder_medal.png'),
-                ('COMPROMISO_TOTAL', 'Compromiso Total', 'Un mes de asistencia perfecta.', 'assets/icons/medals/placeholder_medal.png'),
-                ('MADRUGADOR', 'Madrugador', 'Iniciaste sesión 5 días seguidos antes de las 8 AM.', 'assets/icons/medals/placeholder_medal.png')
+                ('PRIMEROS_5_PASOS', 'Primeros 5 Pasos', 'Asististe a 5 clases. ¡Sigue así!', 'assets/icons/medals/placeholder_medal.png', 0),
+                ('COMPROMISO_TOTAL', 'Compromiso Total', 'Un mes de asistencia perfecta.', 'assets/icons/medals/placeholder_medal.png', 0),
+                ('MADRUGADOR', 'Madrugador', 'Iniciaste sesión 5 días seguidos antes de las 8 AM.', 'assets/icons/medals/placeholder_medal.png', 0),
+                ('COLEGA_SOLIDARIO', 'Colega Solidario', 'Ayudaste a un compañero de forma destacada.', 'assets/icons/medals/placeholder_medal.png', 1)
             ]
-            for key, nombre, desc, icon in medallas:
-                cursor.execute("INSERT OR IGNORE INTO gamificacion_medallas (inquilino_id, medalla_key, nombre, descripcion, icono_path) VALUES (?, ?, ?, ?, ?)",
-                               (tenant_id, key, nombre, desc, icon))
+            for key, nombre, desc, icon, es_manual in medallas:
+                cursor.execute("INSERT OR IGNORE INTO gamificacion_medallas (inquilino_id, medalla_key, nombre, descripcion, icono_path, es_manual) VALUES (?, ?, ?, ?, ?, ?)",
+                               (tenant_id, key, nombre, desc, icon, es_manual))
             print("Medallas de gamificación de prueba creadas.")
 
             conn.commit()

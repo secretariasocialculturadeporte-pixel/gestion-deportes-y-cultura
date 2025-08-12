@@ -91,6 +91,13 @@ def mi_progreso_view(page: ft.Page, tenant_id: int, user_id: int):
                         ft.Divider(height=30),
                         ft.Text("Mis Medallas", size=20, weight="bold"),
                         medallas_container,
+                        ft.Divider(height=30),
+                        ft.Text("Configuración de Privacidad", size=20, weight="bold"),
+                        ft.Switch(
+                            label="Mostrar mi progreso en los rankings públicos",
+                            value=True, # Will be loaded from DB
+                            on_change=lambda e: update_ranking_preference(e.control.value)
+                        )
                     ],
                     horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                     scroll=ft.ScrollMode.AUTO
@@ -98,3 +105,19 @@ def mi_progreso_view(page: ft.Page, tenant_id: int, user_id: int):
             )
         ]
     )
+
+    def update_ranking_preference(show_in_rankings: bool):
+        try:
+            conn = sqlite3.connect("formacion.db")
+            cursor = conn.cursor()
+            cursor.execute(
+                "UPDATE alumnos SET mostrar_en_rankings = ? WHERE usuario_id = ?",
+                (1 if show_in_rankings else 0, user_id)
+            )
+            conn.commit()
+            conn.close()
+            page.snack_bar = ft.SnackBar(ft.Text("Preferencia de ranking actualizada."), bgcolor="green")
+            page.snack_bar.open = True
+            page.update()
+        except Exception as e:
+            print(f"Error updating ranking preference: {e}")
