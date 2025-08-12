@@ -25,6 +25,8 @@ from views.admin_empresa.gestion_personal import gestion_personal_view
 from views.jefe_area.jefe_area_principal import jefe_area_principal_view
 from views.jefe_area.gestion_equipo import gestion_equipo_view
 from views.jefe_area.analisis_datos import analisis_datos_view
+from views.jefe_area.gestion_eventos import gestion_eventos_view
+from views.jefe_area.gestion_salidas import gestion_salidas_view
 from views.alumno.mi_progreso import mi_progreso_view
 from views.admin_empresa.gestion_areas import gestion_areas_view
 from views.admin_empresa.audit_log_view import audit_log_view
@@ -245,6 +247,14 @@ def main(page: ft.Page):
 
             elif page.route == '/jefe_area/analisis':
                 if user_role == 'jefe_area': add_view(analisis_datos_view, tenant_id, user_id)
+                else: page.go('/')
+
+            elif page.route == '/gestion_eventos':
+                if user_role == 'jefe_area': add_view(gestion_eventos_view, user_id)
+                else: page.go('/')
+
+            elif page.route == '/gestion_salidas':
+                if user_role == 'jefe_area': add_view(gestion_salidas_view, user_id)
                 else: page.go('/')
 
             elif page.route == '/jefe_escenarios/home':

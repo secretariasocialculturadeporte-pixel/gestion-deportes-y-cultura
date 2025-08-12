@@ -28,6 +28,19 @@ def jefe_area_principal_view(page: ft.Page):
                     subtitle=ft.Text("Ver análisis y reportes de datos de tu área"),
                     on_click=lambda _: page.go("/jefe_area/analisis")
                 ),
+                ft.Divider(),
+                ft.ListTile(
+                    leading=ft.Icon(ft.icons.EVENT),
+                    title=ft.Text("Gestionar Eventos"),
+                    subtitle=ft.Text("Crear y administrar eventos del área"),
+                    on_click=lambda _: page.go("/gestion_eventos")
+                ),
+                ft.ListTile(
+                    leading=ft.Icon(ft.icons.AIRPLANEMODE_ACTIVE),
+                    title=ft.Text("Gestionar Salidas"),
+                    subtitle=ft.Text("Crear y administrar salidas y viajes del área"),
+                    on_click=lambda _: page.go("/gestion_salidas")
+                ),
             ], scroll=ft.ScrollMode.AUTO)
         )
     ])

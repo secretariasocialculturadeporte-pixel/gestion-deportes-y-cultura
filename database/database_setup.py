@@ -294,13 +294,30 @@ def setup_database():
     CREATE TABLE IF NOT EXISTS eventos (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         inquilino_id INTEGER NOT NULL,
-        nombre TEXT,
-        tipo TEXT,
-        fecha TEXT,
+        nombre TEXT NOT NULL,
         descripcion TEXT,
-        creado_por_id INTEGER,
+        tipo TEXT NOT NULL CHECK(tipo IN ('evento', 'salida')), -- 'evento' o 'salida' (viaje)
+        alcance TEXT NOT NULL CHECK(alcance IN ('nacional', 'regional', 'internacional')),
+        area TEXT NOT NULL CHECK(area IN ('Cultura', 'Deportes')),
+        fecha_inicio TEXT,
+        fecha_fin TEXT,
+        lugar TEXT,
+        creado_por_usuario_id INTEGER, -- Creado por el Jefe de Área
         FOREIGN KEY (inquilino_id) REFERENCES inquilinos(id),
-        FOREIGN KEY (creado_por_id) REFERENCES profesores(id)
+        FOREIGN KEY (creado_por_usuario_id) REFERENCES usuarios(id)
+    );
+    """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS evento_participantes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        inquilino_id INTEGER NOT NULL,
+        evento_id INTEGER NOT NULL,
+        usuario_id INTEGER NOT NULL,
+        rol_participacion TEXT, -- e.g., 'competidor', 'asistente', 'organizador'
+        FOREIGN KEY (inquilino_id) REFERENCES inquilinos(id),
+        FOREIGN KEY (evento_id) REFERENCES eventos(id),
+        FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
     );
     """)
 
