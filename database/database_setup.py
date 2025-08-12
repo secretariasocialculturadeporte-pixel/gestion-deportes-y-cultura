@@ -452,6 +452,37 @@ def setup_database():
     );
     """)
 
+    # --- 9. Tablas para Facturación y Suscripciones ---
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS suscripciones (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        inquilino_id INTEGER UNIQUE NOT NULL,
+        plan TEXT NOT NULL,
+        fecha_inicio TEXT NOT NULL,
+        fecha_fin TEXT,
+        estado TEXT NOT NULL CHECK(estado IN ('en_prueba', 'activa', 'cancelada', 'vencida')),
+        stripe_customer_id TEXT,
+        stripe_subscription_id TEXT,
+        FOREIGN KEY (inquilino_id) REFERENCES inquilinos(id)
+    );
+    """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS facturas (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        suscripcion_id INTEGER NOT NULL,
+        inquilino_id INTEGER NOT NULL,
+        monto REAL NOT NULL,
+        fecha_emision TEXT NOT NULL,
+        fecha_pago TEXT,
+        estado TEXT NOT NULL CHECK(estado IN ('pendiente', 'pagada', 'fallida')),
+        stripe_invoice_id TEXT UNIQUE,
+        pdf_url TEXT,
+        FOREIGN KEY (suscripcion_id) REFERENCES suscripciones(id),
+        FOREIGN KEY (inquilino_id) REFERENCES inquilinos(id)
+    );
+    """)
+
     # Add columns to alumnos table using ALTER TABLE for safety
     try:
         cursor.execute("ALTER TABLE alumnos ADD COLUMN puntos_totales INTEGER DEFAULT 0")

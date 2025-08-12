@@ -1,6 +1,8 @@
 from flask import Flask, jsonify, request, g
 from functools import wraps
 import sqlite3
+import stripe
+import os
 
 # --- Configuration ---
 DATABASE_PATH = "../formacion.db"
@@ -96,19 +98,34 @@ def handle_sales_query():
 
     return jsonify({"reply": reply})
 
+# --- Stripe Configuration ---
+# It's crucial to set these as environment variables in a real production environment
+stripe.api_key = os.getenv("STRIPE_SECRET_KEY", "sk_test_...") # Replace with your test secret key
+STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET", "whsec_...") # Replace with your webhook secret
+
+# Plan IDs from your Stripe account
+PLAN_PRICE_IDS = {
+    "pro_mensual": "price_...", # Replace with your monthly plan price ID
+    "pro_anual": "price_..."    # Replace with your annual plan price ID
+}
+
 @app.route('/api/register_tenant', methods=['POST'])
 def register_tenant():
-    """Handles new tenant and admin user registration."""
+    """Handles new tenant registration and initiates Stripe checkout."""
     data = request.get_json()
-    required_fields = ['nombre_empresa', 'nombre_admin', 'correo_admin', 'usuario_admin', 'password_admin']
+    required_fields = ['nombre_empresa', 'nombre_admin', 'correo_admin', 'usuario_admin', 'password_admin', 'plan']
     if not data or not all(field in data for field in required_fields):
         return jsonify({"error": "Faltan datos en la solicitud."}), 400
+
+    plan_id = data['plan']
+    if plan_id not in PLAN_PRICE_IDS and plan_id != 'gratis':
+         return jsonify({"error": "Plan no válido."}), 400
 
     conn = get_db_connection()
     cursor = conn.cursor()
 
     try:
-        # Check for existing company or user
+        # DB checks for existing user/company
         empresa_existente = cursor.execute('SELECT id FROM inquilinos WHERE nombre_empresa = ?', (data['nombre_empresa'],)).fetchone()
         if empresa_existente:
             return jsonify({"error": "Ya existe una empresa con ese nombre."}), 409
@@ -117,16 +134,13 @@ def register_tenant():
         if usuario_existente:
             return jsonify({"error": "El nombre de usuario del administrador ya está en uso."}), 409
 
-        # Generate a new API key (simple version)
+        # Create tenant and user in DB first
         import secrets
         new_api_key = secrets.token_hex(16)
-
-        # Create the new tenant
         cursor.execute("INSERT INTO inquilinos (nombre_empresa, fecha_suscripcion, plan, api_key) VALUES (?, ?, ?, ?)",
-                       (data['nombre_empresa'], sqlite3.datetime.now(), 'gratis_60', new_api_key))
+                       (data['nombre_empresa'], sqlite3.datetime.now(), data['plan'], new_api_key))
         tenant_id = cursor.lastrowid
 
-        # Create the admin user for the new tenant
         from views.login import hash_password
         cursor.execute("""
             INSERT INTO usuarios (inquilino_id, nombre_usuario, password_hash, rol, nombre_completo, correo)
@@ -136,8 +150,39 @@ def register_tenant():
             data['nombre_admin'], data['correo_admin']
         ))
 
+        # --- Stripe Integration ---
+        # Create a customer in Stripe
+        customer = stripe.Customer.create(
+            email=data['correo_admin'],
+            name=data['nombre_admin'],
+            metadata={'tenant_id': tenant_id, 'tenant_name': data['nombre_empresa']}
+        )
+
+        # If the plan is the free trial, we create the subscription directly
+        if plan_id == 'gratis':
+            from datetime import datetime, timedelta
+            fecha_inicio = datetime.now()
+            fecha_fin = fecha_inicio + timedelta(days=60)
+            cursor.execute("""
+                INSERT INTO suscripciones (inquilino_id, plan, fecha_inicio, fecha_fin, estado, stripe_customer_id)
+                VALUES (?, ?, ?, ?, 'en_prueba', ?)
+            """, (tenant_id, 'gratis', fecha_inicio.isoformat(), fecha_fin.isoformat(), customer.id))
+            conn.commit()
+            return jsonify({"message": "Registro de prueba exitoso!", "redirect_url": "/login"}), 201
+
+        # For paid plans, create a Stripe Checkout session
+        checkout_session = stripe.checkout.Session.create(
+            customer=customer.id,
+            payment_method_types=['card'],
+            line_items=[{'price': PLAN_PRICE_IDS[plan_id], 'quantity': 1}],
+            mode='subscription',
+            success_url=request.host_url + 'payment_success.html', # Dummy pages for now
+            cancel_url=request.host_url + 'payment_cancel.html',
+            metadata={'tenant_id': tenant_id}
+        )
+
         conn.commit()
-        return jsonify({"message": "Registro exitoso!", "empresa": data['nombre_empresa']}), 201
+        return jsonify({"checkout_url": checkout_session.url}), 200
 
     except Exception as e:
         conn.rollback()
@@ -196,6 +241,84 @@ def get_nearby_tenants():
 
     except Exception as e:
         return jsonify({"error": "Ocurrió un error en el servidor.", "details": str(e)}), 500
+
+
+@app.route('/api/create_customer_portal_session', methods=['POST'])
+@require_api_key
+def create_customer_portal_session():
+    tenant_id = g.tenant_id
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT stripe_customer_id FROM suscripciones WHERE inquilino_id = ?", (tenant_id,))
+    result = cursor.fetchone()
+    conn.close()
+
+    if not result or not result['stripe_customer_id']:
+        return jsonify({"error": "No se encontró el ID de cliente de Stripe para este inquilino."}), 404
+
+    stripe_customer_id = result['stripe_customer_id']
+
+    try:
+        # Create a billing portal session
+        portal_session = stripe.billing_portal.Session.create(
+            customer=stripe_customer_id,
+            return_url=request.host_url, # Or a specific page in the Flet app
+        )
+        return jsonify({"portal_url": portal_session.url})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/webhooks/stripe', methods=['POST'])
+def stripe_webhook():
+    payload = request.get_data(as_text=True)
+    sig_header = request.headers.get('Stripe-Signature')
+
+    try:
+        event = stripe.Webhook.construct_event(
+            payload, sig_header, STRIPE_WEBHOOK_SECRET
+        )
+    except ValueError as e:
+        # Invalid payload
+        return 'Invalid payload', 400
+    except stripe.error.SignatureVerificationError as e:
+        # Invalid signature
+        return 'Invalid signature', 400
+
+    # Handle the event
+    if event['type'] == 'checkout.session.completed':
+        session = event['data']['object']
+        tenant_id = session.get('metadata', {}).get('tenant_id')
+        customer_id = session.get('customer')
+        subscription_id = session.get('subscription')
+
+        if tenant_id and customer_id and subscription_id:
+            # Retrieve the subscription to get plan details
+            subscription = stripe.Subscription.retrieve(subscription_id)
+            plan_id = subscription['items']['data'][0]['price']['id']
+            plan_name = [k for k, v in PLAN_PRICE_IDS.items() if v == plan_id][0]
+
+            from datetime import datetime
+            start_date = datetime.fromtimestamp(subscription.current_period_start).isoformat()
+            end_date = datetime.fromtimestamp(subscription.current_period_end).isoformat()
+
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            cursor.execute("""
+                INSERT INTO suscripciones (inquilino_id, plan, fecha_inicio, fecha_fin, estado, stripe_customer_id, stripe_subscription_id)
+                VALUES (?, ?, ?, ?, 'activa', ?, ?)
+            """, (tenant_id, plan_name, start_date, end_date, customer_id, subscription_id))
+            conn.commit()
+            conn.close()
+            print(f"Suscripción creada en la base de datos para el inquilino {tenant_id}")
+
+    # Other events to handle later:
+    # invoice.payment_succeeded -> Update subscription end date, create invoice record
+    # invoice.payment_failed -> Update subscription status to 'vencida'
+    # customer.subscription.deleted -> Update subscription status to 'cancelada'
+
+    return 'Success', 200
 
 
 if __name__ == '__main__':

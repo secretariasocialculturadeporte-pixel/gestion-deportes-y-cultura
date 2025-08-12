@@ -25,6 +25,7 @@ from views.admin_reporte_demografico import admin_reporte_demografico
 from views.admin_gestion_listas import admin_gestion_listas
 from views.admin_principal import admin_principal
 from views.admin_empresa.gestion_personal import gestion_personal_view
+from views.admin_empresa.gestion_suscripcion import gestion_suscripcion_view
 from views.jefe_area.jefe_area_principal import jefe_area_principal_view
 from views.jefe_area.gestion_equipo import gestion_equipo_view
 from views.jefe_area.analisis_datos import analisis_datos_view
@@ -146,6 +147,29 @@ def main(page: ft.Page):
             page.go("/login")
 
         else:
+            # --- Subscription Check ---
+            # Check the tenant's subscription status before allowing access to any protected route.
+            conn = sqlite3.connect("formacion.db")
+            subscription = conn.execute("SELECT estado FROM suscripciones WHERE inquilino_id = ?", (tenant_id,)).fetchone()
+            conn.close()
+
+            # Allow access if subscription is active, in trial, or if there's no subscription record yet (e.g., legacy tenants)
+            is_active_sub = not subscription or subscription['estado'] in ('activa', 'en_prueba')
+
+            # Define routes that are always accessible regardless of subscription status
+            allowed_routes = ['/admin/suscripcion']
+
+            if not is_active_sub and page.route not in allowed_routes:
+                if user_role == 'admin_empresa':
+                    # Redirect admin to the subscription page to resolve the issue
+                    page.go('/admin/suscripcion')
+                else:
+                    # Log out other users if the subscription is inactive
+                    page.session.clear()
+                    page.go('/login?error=subscription_inactive')
+                page.update()
+                return # Stop further processing of the route
+
             # --- Role-based routing for authenticated users ---
 
             # Create a language selector for all authenticated views
@@ -250,6 +274,10 @@ def main(page: ft.Page):
 
             elif page.route == '/admin/audit_log':
                 if user_role == 'admin_empresa': add_view(audit_log_view, tenant_id)
+                else: page.go('/')
+
+            elif page.route == '/admin/suscripcion':
+                if user_role == 'admin_empresa': add_view(gestion_suscripcion_view, tenant_id)
                 else: page.go('/')
 
             elif page.route == '/jefe_area/home':

@@ -82,6 +82,12 @@ def admin_principal(page: ft.Page, tenant_id: int): # Now needs tenant_id
                     subtitle=ft.Text("Ver el registro de acciones importantes en el sistema"),
                     on_click=lambda _: page.go("/admin/audit_log")
                 ),
+                ft.ListTile(
+                    leading=ft.Icon(ft.icons.CREDIT_CARD),
+                    title=ft.Text("Suscripción y Facturación"),
+                    subtitle=ft.Text("Ver el estado de tu plan y tu historial de pagos"),
+                    on_click=lambda _: page.go("/admin/suscripcion")
+                ),
                 ft.Divider(height=20),
                 ft.Text("Asistente de IA", size=18, weight="bold"),
                 ft.Row([command_input, submit_button]),
