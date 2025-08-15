@@ -44,14 +44,10 @@ def login_view(page: ft.Page, google_provider, microsoft_provider):
                 # This should be run in a separate thread to not slow down login
                 process_gamified_action(tenant_id, user_id, 'INICIO_SESION_DIARIO', page.pubsub)
 
-            if user_role == 'admin_general': page.go("/ccos/home")
-            elif user_role == 'admin_empresa': page.go("/admin_home")
-            elif user_role == 'jefe_area': page.go("/jefe_area/home")
-            elif user_role == 'jefe_escenarios': page.go("/jefe_escenarios/home")
-            elif user_role == 'profesor': page.go("/profesor_home")
-            elif user_role == 'alumno': page.go("/alumno_clases")
-            elif user_role == 'almacenista': page.go("/almacenista/elementos")
-            else: page.go("/")
+            if user_role == 'admin_general':
+                page.go("/ccos/home")
+            else:
+                page.go("/dashboard")
         else:
             mensaje_login.value = t("login.error_credentials")
             page.update()

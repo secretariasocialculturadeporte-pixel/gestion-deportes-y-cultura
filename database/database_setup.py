@@ -545,6 +545,11 @@ def setup_database():
     except sqlite3.OperationalError:
         pass # Column already exists
 
+    try:
+        cursor.execute("ALTER TABLE usuarios ADD COLUMN dashboard_layout TEXT")
+    except sqlite3.OperationalError:
+        pass # Column already exists
+
 
     conn.commit()
     conn.close()

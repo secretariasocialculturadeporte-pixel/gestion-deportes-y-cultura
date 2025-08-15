@@ -45,6 +45,7 @@ from views.components.notification_bell import NotificationBell
 from views.components.language_selector import LanguageSelector
 from views.components.message_icon import MessageIcon
 from views.shared.mensajeria_view import mensajeria_view
+from views.shared.dashboard_view import dashboard_view
 from views.forgot_password import forgot_password_view
 from views.reset_password import reset_password_view
 from utils.i18n_service import Translator
@@ -93,11 +94,8 @@ def main(page: ft.Page):
                 page.session.set("user_name", user_name)
                 page.session.set("tenant_id", tenant_id)
                 print(f"Usuario OAuth '{email}' encontrado. Iniciando sesión para el inquilino {tenant_id}.")
-                # Redirect to their correct home page
-                if user_role == 'profesor': page.go("/profesor_home")
-                elif user_role == 'alumno': page.go("/alumno_clases")
-                elif user_role == 'admin_empresa': page.go("/admin_home")
-                else: page.go("/") # Fallback
+                # Redirect all authenticated users to the new dashboard
+                page.go("/dashboard")
             else:
                 # User not found in DB. They cannot log in.
                 print(f"Usuario OAuth '{email}' no encontrado en la base de datos. Acceso denegado.")
@@ -364,6 +362,9 @@ def main(page: ft.Page):
                 if user_role == 'jefe_escenarios': add_view(gestion_escenarios_avanzado_view, tenant_id, user_id)
                 else: page.go('/')
 
+            elif page.route == '/dashboard':
+                add_view(dashboard_view, user_id, user_role, tenant_id)
+
             # Dynamic route for reservations
             elif page.route.startswith('/jefe_escenarios/reservas/'):
                 if user_role == 'jefe_escenarios':
@@ -376,13 +377,8 @@ def main(page: ft.Page):
                     page.go('/')
 
             else:
-                # If route doesn't exist, go to a default page based on role
-                if user_role == 'profesor':
-                    page.go('/profesor_home')
-                elif user_role == 'alumno':
-                    page.go('/alumno_clases')
-                else:
-                    page.go('/') # Fallback
+                # If route doesn't exist, go to the main dashboard
+                page.go('/dashboard')
 
         page.update()
 
