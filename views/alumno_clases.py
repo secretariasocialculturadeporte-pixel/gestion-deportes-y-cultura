@@ -100,7 +100,17 @@ def alumno_clases(page: ft.Page, tenant_id: int, alumno_id: int):
                                 ft.Text(f"Fecha: {fecha} | Hora: {hora_inicio} - {hora_fin}"),
                                 ft.Text(f"Lugar: Escenario {escenario_id}, Espacio: {espacio or 'N/A'}"),
                                 ft.Text(f"Novedad: {novedad}", italic=True) if novedad else ft.Container(),
-                                asistencia_control
+                                ft.Row(
+                                    [
+                                        asistencia_control,
+                                        ft.ElevatedButton(
+                                            "Ver Material de Estudio",
+                                            icon=ft.icons.MENU_BOOK,
+                                            on_click=lambda e, cid=clase_id: page.go(f"/alumno/contenido/{cid}"),
+                                        )
+                                    ],
+                                    alignment=ft.MainAxisAlignment.SPACE_AROUND
+                                )
                             ]),
                             padding=15,
                             border_radius=10

@@ -517,6 +517,20 @@ def setup_database():
     );
     """)
 
+    # --- 11. Tablas para Contenido E-learning ---
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS contenido_curricular (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        tema_id INTEGER NOT NULL,
+        tipo_contenido TEXT NOT NULL CHECK(tipo_contenido IN ('pdf', 'video', 'enlace')),
+        titulo TEXT NOT NULL,
+        ruta_archivo_o_url TEXT NOT NULL,
+        subido_por_usuario_id INTEGER,
+        FOREIGN KEY (tema_id) REFERENCES plan_curricular_temas(id),
+        FOREIGN KEY (subido_por_usuario_id) REFERENCES usuarios(id)
+    );
+    """)
+
     # Add columns to alumnos table using ALTER TABLE for safety
     try:
         cursor.execute("ALTER TABLE alumnos ADD COLUMN puntos_totales INTEGER DEFAULT 0")

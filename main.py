@@ -16,6 +16,7 @@ from views.profesor.planificador_calendario import planificador_calendario_view
 from views.profesor.seguimiento_progreso import seguimiento_progreso_view
 
 from views.alumno_clases import alumno_clases
+from views.alumno.ver_contenido import ver_contenido_view
 from views.alumno_inscripcion import alumno_inscripcion
 
 from views.almacenista_gestion_elementos import almacenista_gestion_elementos
@@ -280,6 +281,16 @@ def main(page: ft.Page):
             elif page.route == '/alumno_clases':
                 if user_role == 'alumno': add_view(alumno_clases, tenant_id, user_id)
                 else: page.go('/')
+
+            elif page.route.startswith("/alumno/contenido/"):
+                if user_role == 'alumno':
+                    try:
+                        clase_id = int(page.route.split("/")[-1])
+                        add_view(ver_contenido_view, user_id, clase_id)
+                    except (ValueError, IndexError):
+                        page.go("/alumno_clases") # Go back to classes if ID is invalid
+                else:
+                    page.go('/')
 
             elif page.route == '/almacenista/elementos':
                 if user_role == 'almacenista': add_view(almacenista_gestion_elementos, tenant_id, user_id)

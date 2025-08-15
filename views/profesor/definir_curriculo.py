@@ -80,6 +80,7 @@ def definir_curriculo_view(page: ft.Page, user_id: int):
                                 ft.IconButton(icon=ft.icons.ARROW_DOWNWARD, on_click=lambda e, t_id=topic_id: move_topic(t_id, "down"), tooltip="Mover Abajo"),
                                 ft.IconButton(icon=ft.icons.EDIT, on_click=lambda e, t_id=topic_id: open_edit_topic_dialog(t_id), tooltip="Editar Tema"),
                                 ft.IconButton(icon=ft.icons.DELETE, on_click=lambda e, t_id=topic_id: open_delete_topic_dialog(t_id), tooltip="Eliminar Tema"),
+                                ft.IconButton(icon=ft.icons.ATTACH_FILE, on_click=lambda e, t_id=topic_id, t_name=topic_name: open_content_dialog(t_id, t_name), tooltip="Gestionar Contenido"),
                             ])
                         )
                     )
@@ -352,6 +353,128 @@ def definir_curriculo_view(page: ft.Page, user_id: int):
             page.update()
         finally:
             conn.close()
+
+    # --- Content Management Dialog ---
+    def on_file_picker_result(e: ft.FilePickerResultEvent):
+        topic_id = e.control.data
+        if not e.files:
+            return
+
+        # This is a simulation. In a real app, the upload handler would be more complex.
+        # For now, we just register the file name. A real implementation needs to handle the binary data.
+        source_file = e.files[0]
+        destination_path = f"uploads/{source_file.name}"
+
+        try:
+            conn = sqlite3.connect("formacion.db")
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                INSERT INTO contenido_curricular (tema_id, tipo_contenido, titulo, ruta_archivo_o_url, subido_por_usuario_id)
+                VALUES (?, ?, ?, ?, ?)
+                """,
+                (topic_id, "pdf", source_file.name, destination_path, user_id)
+            )
+            conn.commit()
+            conn.close()
+            page.snack_bar = ft.SnackBar(ft.Text(f"Archivo '{source_file.name}' registrado."), bgcolor="green")
+            content_dialog.open = False
+        except Exception as ex:
+            page.snack_bar = ft.SnackBar(ft.Text(f"Error al registrar archivo: {ex}"), bgcolor="red")
+
+        page.snack_bar.open = True
+        page.update()
+
+    file_picker = ft.FilePicker(on_result=on_file_picker_result)
+    page.overlay.append(file_picker)
+
+    content_list_view = ft.ListView(expand=True)
+    link_url_field = ft.TextField(label="URL del Enlace", expand=True)
+    link_title_field = ft.TextField(label="Título del Enlace", expand=True)
+
+    def add_link():
+        topic_id = content_dialog.data
+        if not link_url_field.value or not link_title_field.value:
+            return
+        try:
+            conn = sqlite3.connect("formacion.db")
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                INSERT INTO contenido_curricular (tema_id, tipo_contenido, titulo, ruta_archivo_o_url, subido_por_usuario_id)
+                VALUES (?, 'enlace', ?, ?, ?)
+                """,
+                (topic_id, link_title_field.value, link_url_field.value, user_id)
+            )
+            conn.commit()
+            conn.close()
+            link_url_field.value = ""
+            link_title_field.value = ""
+            open_content_dialog(topic_id, "")
+        except Exception as ex:
+            page.snack_bar = ft.SnackBar(ft.Text(f"Error al añadir enlace: {ex}"), bgcolor="red")
+            page.snack_bar.open = True
+            page.update()
+
+    def delete_content(content_id):
+        topic_id = content_dialog.data
+        try:
+            conn = sqlite3.connect("formacion.db")
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM contenido_curricular WHERE id = ?", (content_id,))
+            conn.commit()
+            conn.close()
+            open_content_dialog(topic_id, "")
+        except Exception as ex:
+            page.snack_bar = ft.SnackBar(ft.Text(f"Error al eliminar contenido: {ex}"), bgcolor="red")
+            page.snack_bar.open = True
+            page.update()
+
+    content_dialog = ft.AlertDialog(
+        modal=True,
+        title=ft.Text("Gestionar Contenido"),
+        content=ft.Container(
+            ft.Column([
+                ft.Text("Contenido Existente:"),
+                content_list_view,
+                ft.Divider(),
+                ft.Text("Añadir Nuevo Contenido:"),
+                ft.Row([link_title_field, link_url_field, ft.IconButton(icon=ft.icons.ADD, on_click=lambda e: add_link(), tooltip="Añadir Enlace")]),
+                ft.ElevatedButton("Subir Archivo", icon=ft.icons.UPLOAD_FILE, on_click=lambda _: file_picker.pick_files(allow_multiple=False)),
+            ]),
+            width=600, height=400
+        ),
+        actions=[ft.TextButton("Cerrar", on_click=lambda e: setattr(content_dialog, 'open', False) or page.update())]
+    )
+
+    def open_content_dialog(topic_id, topic_name):
+        content_dialog.data = topic_id
+        content_dialog.title = ft.Text(f"Contenido para: {topic_name}")
+        file_picker.data = topic_id
+
+        content_list_view.controls.clear()
+        conn = sqlite3.connect("formacion.db")
+        cursor = conn.cursor()
+        cursor.execute("SELECT id, titulo, tipo_contenido, ruta_archivo_o_url FROM contenido_curricular WHERE tema_id = ?", (topic_id,))
+        contents = cursor.fetchall()
+        conn.close()
+
+        if not contents:
+            content_list_view.controls.append(ft.Text("No hay contenido para este tema."))
+        else:
+            for c_id, title, c_type, c_path in contents:
+                icon = ft.icons.LINK if c_type == 'enlace' else ft.icons.PICTURE_AS_PDF
+                content_list_view.controls.append(
+                    ft.ListTile(
+                        leading=ft.Icon(icon),
+                        title=ft.Text(title),
+                        subtitle=ft.Text(c_path, no_wrap=True),
+                        trailing=ft.IconButton(icon=ft.icons.DELETE_FOREVER, on_click=lambda e, c_id=c_id: delete_content(c_id))
+                    )
+                )
+        page.dialog = content_dialog
+        content_dialog.open = True
+        page.update()
 
     # --- Main Layout ---
     add_plan_button = ft.ElevatedButton("Crear Nuevo Plan", icon=ft.icons.ADD, on_click=open_add_plan_dialog, expand=True)
