@@ -1,9 +1,8 @@
 import flet as ft
 import sqlite3
 
-class NotificationBell(ft.UserControl):
+class NotificationBell(ft.Container):
     def __init__(self, page: ft.Page, tenant_id: int, user_id: int):
-        super().__init__()
         self.page = page
         self.tenant_id = tenant_id
         self.user_id = user_id
@@ -33,8 +32,11 @@ class NotificationBell(ft.UserControl):
             ])
         )
 
-    def build(self):
-        return self.popup_menu
+        super().__init__(content=self.popup_menu)
+
+        # Logic from did_mount
+        self.page.pubsub.subscribe(self.on_pubsub_message)
+        self.fetch_unread_count()
 
     def fetch_unread_count(self):
         try:

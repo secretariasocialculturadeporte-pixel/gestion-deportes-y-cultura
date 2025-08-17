@@ -365,6 +365,20 @@ def main(page: ft.Page):
             elif page.route == '/dashboard':
                 add_view(dashboard_view, user_id, user_role, tenant_id)
 
+            elif page.route.startswith("/clase/"):
+                try:
+                    parts = page.route.split("/")
+                    clase_id = int(parts[2])
+                    if len(parts) > 3 and parts[3] == "foro":
+                        from views.shared.foro_clase_view import foro_clase_view
+                        add_view(foro_clase_view, user_id, tenant_id, clase_id)
+                    else:
+                        # Placeholder for a general class view if needed in the future
+                        page.go("/dashboard")
+                except (ValueError, IndexError):
+                    page.go("/dashboard")
+
+
             # Dynamic route for reservations
             elif page.route.startswith('/jefe_escenarios/reservas/'):
                 if user_role == 'jefe_escenarios':

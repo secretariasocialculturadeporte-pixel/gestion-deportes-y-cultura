@@ -332,6 +332,7 @@ def setup_database():
         FOREIGN KEY (inquilino_id) REFERENCES inquilinos(id),
         FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
     );
+    """)
 
     # --- 6. Tabla de Auditoría ---
     cursor.execute("""
@@ -528,6 +529,44 @@ def setup_database():
         subido_por_usuario_id INTEGER,
         FOREIGN KEY (tema_id) REFERENCES plan_curricular_temas(id),
         FOREIGN KEY (subido_por_usuario_id) REFERENCES usuarios(id)
+    );
+    """)
+
+    # --- 12. Tablas para Foros de Clase ---
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS foros_clases (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        clase_id INTEGER UNIQUE NOT NULL,
+        inquilino_id INTEGER NOT NULL,
+        nombre_foro TEXT NOT NULL,
+        FOREIGN KEY (clase_id) REFERENCES clases(id),
+        FOREIGN KEY (inquilino_id) REFERENCES inquilinos(id)
+    );
+    """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS foros_hilos (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        foro_id INTEGER NOT NULL,
+        titulo TEXT NOT NULL,
+        creado_por_usuario_id INTEGER NOT NULL,
+        timestamp TEXT NOT NULL,
+        FOREIGN KEY (foro_id) REFERENCES foros_clases(id),
+        FOREIGN KEY (creado_por_usuario_id) REFERENCES usuarios(id)
+    );
+    """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS foros_publicaciones (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        hilo_id INTEGER NOT NULL,
+        usuario_id INTEGER NOT NULL,
+        contenido TEXT NOT NULL,
+        timestamp TEXT NOT NULL,
+        responde_a_id INTEGER,
+        FOREIGN KEY (hilo_id) REFERENCES foros_hilos(id),
+        FOREIGN KEY (usuario_id) REFERENCES usuarios(id),
+        FOREIGN KEY (responde_a_id) REFERENCES foros_publicaciones(id)
     );
     """)
 

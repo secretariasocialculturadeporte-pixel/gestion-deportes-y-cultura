@@ -1,20 +1,18 @@
 import flet as ft
 from utils.i18n_service import Translator
 
-class LanguageSelector(ft.UserControl):
+class LanguageSelector(ft.Dropdown):
     def __init__(self, page: ft.Page, translator: Translator):
-        super().__init__()
         self.page = page
         self.translator = translator
 
-    def build(self):
         # Create dropdown options from the languages loaded by the translator
         dropdown_options = []
         for lang_code in self.translator.languages.keys():
             # You could have a mapping for full language names, e.g., {"es": "Español"}
             dropdown_options.append(ft.dropdown.Option(lang_code, lang_code.upper()))
 
-        return ft.Dropdown(
+        super().__init__(
             value=self.translator.current_lang,
             options=dropdown_options,
             on_change=self.language_changed,

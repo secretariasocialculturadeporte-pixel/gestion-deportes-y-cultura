@@ -104,12 +104,20 @@ def alumno_clases(page: ft.Page, tenant_id: int, alumno_id: int):
                                     [
                                         asistencia_control,
                                         ft.ElevatedButton(
-                                            "Ver Material de Estudio",
+                                            "Material",
                                             icon=ft.icons.MENU_BOOK,
                                             on_click=lambda e, cid=clase_id: page.go(f"/alumno/contenido/{cid}"),
+                                            tooltip="Ver Material de Estudio"
+                                        ),
+                                        ft.ElevatedButton(
+                                            "Foro",
+                                            icon=ft.icons.FORUM,
+                                            on_click=lambda e, cid=clase_id: page.go(f"/clase/{cid}/foro"),
+                                            tooltip="Ir al Foro de la Clase"
                                         )
                                     ],
-                                    alignment=ft.MainAxisAlignment.SPACE_AROUND
+                                    alignment=ft.MainAxisAlignment.SPACE_AROUND,
+                                    spacing=10
                                 )
                             ]),
                             padding=15,

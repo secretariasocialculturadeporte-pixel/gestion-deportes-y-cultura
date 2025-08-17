@@ -5,7 +5,7 @@ import operator
 from langchain_core.messages import BaseMessage, FunctionMessage, HumanMessage
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.tools.render import format_tool_to_google_genai_function
-from langgraph.prebuilt import ToolExecutor
+from agent.simple_tool_executor import SimpleToolExecutor
 from langgraph.graph import StateGraph, END
 
 from agent.tools import available_tools
@@ -36,8 +36,9 @@ def create_agent_node(llm, tools):
         return {"messages": [response]}
     return agent_node
 
-def create_tool_node(tool_executor):
+def create_tool_node(tools):
     """A node that executes the tools chosen by the agent."""
+    tool_executor = SimpleToolExecutor(tools)
     def tool_node(state):
         agent_message = state['messages'][-1]
         tool_calls = agent_message.additional_kwargs.get("function_call", [])
@@ -83,14 +84,14 @@ def get_google_api_key_for_tenant(tenant_id: int) -> str:
     # Fallback to environment variable if not set for tenant
     return os.getenv("GOOGLE_API_KEY", "YOUR_GOOGLE_API_KEY_HERE")
 
-def run_agent(state, llm, tool_executor):
+def run_agent(state, llm):
     """Compiles and runs the LangGraph agent."""
     # Create the graph
     workflow = StateGraph(AgentState)
 
     # Add nodes
     workflow.add_node("agent", create_agent_node(llm, available_tools))
-    workflow.add_node("action", create_tool_node(tool_executor))
+    workflow.add_node("action", create_tool_node(available_tools))
 
     # Add edges
     workflow.set_entry_point("agent")
@@ -120,14 +121,13 @@ def process_command_langchain(command: str, tenant_id: int, pubsub_instance) -> 
 
     # 2. Initialize the LLM and tools
     llm = ChatGoogleGenerativeAI(model="gemini-pro", google_api_key=api_key)
-    tool_executor = ToolExecutor(available_tools)
 
     # 3. Define the initial state for the graph
     initial_state = {"messages": [HumanMessage(content=command)]}
 
     # 4. Run the agent graph
     try:
-        final_response = run_agent(initial_state, llm, tool_executor)
+        final_response = run_agent(initial_state, llm)
 
         # The agent's response can be directly sent to the user,
         # or we can use Pub/Sub for more complex UI updates if needed.

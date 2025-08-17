@@ -72,8 +72,13 @@ def profesor_principal(page: ft.Page, tenant_id: int, profesor_id: int):
                     on_click=lambda _: page.go("/profesor_eventos")
                 ),
                 ft.ListTile(
-                    title=ft.Text("📚 Gestión de Clases"),
-                    subtitle=ft.Text("Crear y gestionar tus clases"),
+                    title=ft.Text("📚 Mis Clases"),
+                    subtitle=ft.Text("Ver tus clases y acceder a sus foros"),
+                    on_click=lambda _: page.go("/profesor/mis_clases")
+                ),
+                ft.ListTile(
+                    title=ft.Text("➕ Crear Nueva Clase"),
+                    subtitle=ft.Text("Rellenar el formulario para una nueva clase"),
                     on_click=lambda _: page.go("/profesor_clases")
                 ),
                 ft.Divider(),
